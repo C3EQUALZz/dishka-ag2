@@ -1,12 +1,21 @@
 from typing import Final
 
 from autogen.beta.context import Context
-from autogen.beta.events import BaseEvent, ToolCallEvent
-from autogen.beta.middleware import BaseMiddleware, ToolExecution, ToolResultType
+from autogen.beta.events import BaseEvent, ModelResponse, ToolCallEvent
+from autogen.beta.middleware import (
+    AgentTurn,
+    BaseMiddleware,
+    ToolExecution,
+    ToolResultType,
+)
 from dishka import AsyncContainer, Container, Scope
 from dishka.exception_base import DishkaError
 
-from dishka_autogen._consts import CONTAINER_NAME
+from dishka_autogen._consts import (
+    CONTAINER_NAME,
+    SESSION_CONTAINER_NAME,
+    CurrentContainer,
+)
 
 
 class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
@@ -15,10 +24,44 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
         event: BaseEvent,
         context: Context,
         *,
-        container: AsyncContainer | Container,
+        container: CurrentContainer,
     ) -> None:
         super().__init__(event, context)
-        self._container: Final[AsyncContainer | Container] = container
+        self._container: Final[CurrentContainer] = container
+
+    async def on_turn(
+        self,
+        call_next: AgentTurn,
+        event: BaseEvent,
+        context: Context,
+    ) -> ModelResponse:
+        context_data = {
+            Context: context,
+        }
+
+        if isinstance(self._container, AsyncContainer):
+            async with self._container(
+                context=context_data,
+                scope=Scope.SESSION,
+            ) as session_container:
+                context.dependencies[SESSION_CONTAINER_NAME] = session_container
+                try:
+                    return await call_next(event, context)
+                finally:
+                    del context.dependencies[SESSION_CONTAINER_NAME]
+        elif isinstance(self._container, Container):
+            with self._container(
+                context=context_data,
+                scope=Scope.SESSION,
+            ) as session_container:
+                context.dependencies[SESSION_CONTAINER_NAME] = session_container
+                try:
+                    return await call_next(event, context)
+                finally:
+                    del context.dependencies[SESSION_CONTAINER_NAME]
+
+        msg: str = f"Unknown container type - {type(self._container)}"
+        raise DishkaError(msg)
 
     async def on_tool_execution(
         self,
@@ -26,13 +69,18 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
         event: ToolCallEvent,
         context: Context,
     ) -> ToolResultType:
+        session_container = context.dependencies.get(
+            SESSION_CONTAINER_NAME,
+            self._container,
+        )
+
         context_data = {
             Context: context,
             ToolCallEvent: event,
         }
 
-        if isinstance(self._container, AsyncContainer):
-            async with self._container(
+        if isinstance(session_container, AsyncContainer):
+            async with session_container(
                 context=context_data,
                 scope=Scope.REQUEST,
             ) as request_container:
@@ -41,8 +89,8 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
                     return await call_next(event, context)
                 finally:
                     del context.dependencies[CONTAINER_NAME]
-        elif isinstance(self._container, Container):
-            with self._container(
+        elif isinstance(session_container, Container):
+            with session_container(
                 context=context_data,
                 scope=Scope.REQUEST,
             ) as request_container:
@@ -52,5 +100,5 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
                 finally:
                     del context.dependencies[CONTAINER_NAME]
 
-        msg: str = f"Unknown container type - {type(self._container)}"
+        msg: str = f"Unknown container type - {type(session_container)}"
         raise DishkaError(msg)
