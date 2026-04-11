@@ -11,7 +11,7 @@ from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from dishka import Provider, Scope, make_async_container, provide
 
-from dishka_ag2 import AG2Provider, DishkaMiddleware, FromDishka, inject
+from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
 from tests.common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -59,7 +59,7 @@ async def test_agent_ask_injects_request_deps() -> None:
             ),
             "Done.",
         ),
-        middleware=[Middleware(DishkaMiddleware, container=container)],
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
     )
 
     @agent.tool  # type: ignore[untyped-decorator]
@@ -99,7 +99,7 @@ async def test_agent_ask_multiple_tool_calls(
             ToolCallEvent(name="inc", arguments="{}"),
             "All done.",
         ),
-        middleware=[Middleware(DishkaMiddleware, container=container)],
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
     )
 
     @agent.tool  # type: ignore[untyped-decorator]
@@ -133,7 +133,7 @@ async def test_agent_ask_app_and_request_deps(
             ),
             "Done.",
         ),
-        middleware=[Middleware(DishkaMiddleware, container=container)],
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
     )
 
     @agent.tool  # type: ignore[untyped-decorator]
@@ -184,7 +184,7 @@ async def test_agent_ask_session_scope_with_base_event() -> None:
             ToolCallEvent(name="check", arguments="{}"),
             "Done.",
         ),
-        middleware=[Middleware(DishkaMiddleware, container=container)],
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
     )
 
     @agent.tool  # type: ignore[untyped-decorator]

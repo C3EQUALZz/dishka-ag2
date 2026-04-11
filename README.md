@@ -39,7 +39,8 @@ uv add dishka-ag2
 ```python
 from dishka_ag2 import (
     AG2Provider,
-    DishkaMiddleware,
+    DishkaAsyncMiddleware,
+    DishkaSyncMiddleware,
     FromDishka,
     inject,
 )
@@ -88,7 +89,7 @@ async def greet_user(
     return result
 ```
 
-4. Setup dishka integration: create container with `AG2Provider()` and pass it to `DishkaMiddleware` via `Middleware`
+4. Setup dishka integration: create container with `AG2Provider()` and pass it to `DishkaAsyncMiddleware` or `DishkaSyncMiddleware` via `Middleware`
 
 ```python
 from autogen.beta import Agent
@@ -100,7 +101,7 @@ agent = Agent(
     "assistant",
     prompt="Use tools to greet users.",
     middleware=[
-        Middleware(DishkaMiddleware, container=container),
+        Middleware(DishkaAsyncMiddleware, container=container),
     ],
 )
 ```
@@ -137,7 +138,7 @@ from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from dishka import Provider, Scope, make_async_container, provide
 
-from dishka_ag2 import AG2Provider, DishkaMiddleware, FromDishka, inject
+from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
 
 
 class AppCounter:
@@ -167,7 +168,7 @@ agent = Agent(
         "Done.",
     ),
     middleware=[
-        Middleware(DishkaMiddleware, container=container),
+        Middleware(DishkaAsyncMiddleware, container=container),
     ],
 )
 

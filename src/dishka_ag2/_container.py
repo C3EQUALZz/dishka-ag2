@@ -22,7 +22,7 @@ def _get_container_from_context(context: Context) -> CurrentContainer:
 
     msg = (
         "Dishka container not found in Context.dependencies. "
-        "Make sure DishkaMiddleware is configured."
+        "Make sure DishkaAsyncMiddleware or DishkaSyncMiddleware is configured."
     )
     raise DishkaError(msg)
 

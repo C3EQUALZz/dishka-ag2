@@ -1,4 +1,4 @@
-"""Tests for DishkaMiddleware scope lifecycle."""
+"""Tests for Dishka middleware scope lifecycle."""
 
 from unittest.mock import Mock
 
@@ -10,6 +10,7 @@ from autogen.beta.events import (
     ToolCallEvent,
     ToolResultEvent,
 )
+from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
 from dishka_ag2._consts import CONTAINER_NAME, SESSION_CONTAINER_NAME
@@ -188,6 +189,60 @@ async def test_request_container_cleanup(
         assert CONTAINER_NAME not in context.dependencies
 
 
+@pytest.mark.asyncio()
+async def test_async_session_container_none_raises(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        context.dependencies[SESSION_CONTAINER_NAME] = None
+        event = make_tool_call()
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: ToolCallEvent,
+            ctx: Context,
+        ) -> ToolResultEvent:
+            raise AssertionError
+
+        with pytest.raises(DishkaError, match="async session container"):
+            await instance.on_tool_execution(
+                call_next,
+                event,
+                context,
+            )
+
+
+@pytest.mark.asyncio()
+async def test_sync_session_container_none_raises(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=False,
+    ) as (_, middleware):
+        context = make_context()
+        context.dependencies[SESSION_CONTAINER_NAME] = None
+        event = make_tool_call()
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: ToolCallEvent,
+            ctx: Context,
+        ) -> ToolResultEvent:
+            raise AssertionError
+
+        with pytest.raises(DishkaError, match="sync session container"):
+            await instance.on_tool_execution(
+                call_next,
+                event,
+                context,
+            )
+
+
 # --- APP scope ---
 
 
@@ -302,6 +357,38 @@ async def test_session_scope_via_on_turn(
             ctx: Context,
         ) -> ModelResponse:
             result = await handle(___dishka_context=ctx)
+            assert result == str(SESSION_DEP_VALUE)
+            return ModelResponse(message=result)
+
+        await instance.on_turn(turn_body, event, context)
+
+        app_provider.session_released.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_sync_session_scope_via_on_turn(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=False,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+
+        @inject
+        def handle(
+            session_dep: FromDishka[SessionDep],
+        ) -> str:
+            return str(session_dep)
+
+        instance = middleware(event, context)
+
+        async def turn_body(
+            ev: BaseEvent,
+            ctx: Context,
+        ) -> ModelResponse:
+            result = handle(___dishka_context=ctx)
             assert result == str(SESSION_DEP_VALUE)
             return ModelResponse(message=result)
 
