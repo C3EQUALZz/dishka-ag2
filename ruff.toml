@@ -56,13 +56,14 @@ ignore = [
 [lint.per-file-ignores]
 "tests/**/*.py" = [
     "S",
+    "PLC1901",
+    "PLC2701",
     "PLR0904",
     "PLR0914",
-    "PLC1901",
-    "RUF045",
-    "RUF029",
     "PLR2004",
     "ARG001",
+    "RUF029",
+    "RUF045",
 ]
 
 [lint.isort]
