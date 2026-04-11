@@ -15,7 +15,7 @@ ReturnT = TypeVar("ReturnT")
 ParamsP = ParamSpec("ParamsP")
 
 
-def _find_context_param(func: Callable[..., Any]) -> str | None:
+def _find_context_param(func: Callable[ParamsP, Any]) -> str | None:
     hints = get_type_hints(func)
     return next(
         (name for name, hint in hints.items() if hint is Context),
@@ -62,16 +62,18 @@ def inject_sync(func: Callable[ParamsP, ReturnT]) -> Callable[..., ReturnT]:
 
 
 @overload
-def inject(func: Callable[ParamsP, ReturnT]) -> Callable[..., ReturnT]: ...
-
-
-@overload
 def inject(
     func: Callable[ParamsP, Awaitable[ReturnT]],
 ) -> Callable[..., Awaitable[ReturnT]]: ...
 
 
-def inject(func: Callable[ParamsP, Any]) -> Callable[ParamsP, Any]:
+@overload
+def inject(func: Callable[ParamsP, ReturnT]) -> Callable[..., ReturnT]: ...
+
+
+def inject(
+    func: Callable[ParamsP, Any],
+) -> Callable[..., Any]:
     if inspect.iscoroutinefunction(func):
         return inject_async(func)
     return inject_sync(func)

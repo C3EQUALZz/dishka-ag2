@@ -10,6 +10,7 @@ from autogen.beta.middleware import (
 )
 from dishka import AsyncContainer, Container, Scope
 from dishka.exception_base import DishkaError
+from typing_extensions import override
 
 from dishka_autogen._consts import (
     CONTAINER_NAME,
@@ -29,6 +30,7 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
         super().__init__(event, context)
         self._container: Final[CurrentContainer] = container
 
+    @override
     async def on_turn(
         self,
         call_next: AgentTurn,
@@ -36,6 +38,7 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
         context: Context,
     ) -> ModelResponse:
         context_data = {
+            BaseEvent: event,
             Context: context,
         }
 
@@ -63,6 +66,7 @@ class DishkaMiddleware(BaseMiddleware):  # type: ignore[misc]
         msg: str = f"Unknown container type - {type(self._container)}"
         raise DishkaError(msg)
 
+    @override
     async def on_tool_execution(
         self,
         call_next: ToolExecution,
