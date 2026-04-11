@@ -168,6 +168,7 @@ cython_debug/
 
 repomix-output.md
 src/dishka_ag2/_version.py
+src/dishka_autogen/_version.py
 
 # macOS
 .DS_Store
