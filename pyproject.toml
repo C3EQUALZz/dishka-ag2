@@ -9,10 +9,10 @@ build-backend = "hatchling.build"
 source = "vcs"
 
 [tool.hatch.build.hooks.vcs]
-version-file = "src/dishka_autogen/_version.py"
+version-file = "src/dishka_ag2/_version.py"
 
 [project]
-name = "dishka-autogen"
+name = "dishka-ag2"
 dynamic = ["version"]
 description = "Integration package for Dishka DI and AG2 Framework"
 readme = "README.md"
@@ -43,9 +43,9 @@ dependencies = [
 ]
 
 [project.urls]
-Source = "https://github.com/C3EQUALZz/dishka-autogen"
-Homepage = "https://github.com/C3EQUALZz/dishka-autogen"
-Tracker = "https://github.com/C3EQUALZz/dishka-autogen/issues"
+Source = "https://github.com/C3EQUALZz/dishka-ag2"
+Homepage = "https://github.com/C3EQUALZz/dishka-ag2"
+Tracker = "https://github.com/C3EQUALZz/dishka-ag2/issues"
 
 [dependency-groups]
 dev = [

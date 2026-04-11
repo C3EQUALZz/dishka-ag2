@@ -39,7 +39,7 @@ def tests(
     session.run(
         "pytest",
         "tests",
-        "--cov=dishka_autogen",
+        "--cov=dishka_ag2",
         "--cov-report=term-missing",
         "--cov-append",
         "--cov-config=.coveragerc",

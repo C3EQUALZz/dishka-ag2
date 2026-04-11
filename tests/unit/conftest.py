@@ -5,8 +5,8 @@ from contextlib import asynccontextmanager
 from autogen.beta.middleware import Middleware
 from dishka import make_async_container, make_container
 
-from dishka_autogen import AG2Provider, DishkaMiddleware
-from dishka_autogen._consts import CurrentContainer
+from dishka_ag2 import AG2Provider, DishkaMiddleware
+from dishka_ag2._consts import CurrentContainer
 from tests.common import AppProvider
 
 

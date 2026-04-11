@@ -462,7 +462,7 @@ wheels = [
 ]
 
 [[package]]
-name = "dishka-autogen"
+name = "dishka-ag2"
 source = { editable = "." }
 dependencies = [
     { name = "ag2" },

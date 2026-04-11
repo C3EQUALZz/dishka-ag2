@@ -11,8 +11,8 @@ from autogen.beta.events import (
     ToolResultEvent,
 )
 
-from dishka_autogen import FromDishka, inject
-from dishka_autogen._consts import CONTAINER_NAME, SESSION_CONTAINER_NAME
+from dishka_ag2 import FromDishka, inject
+from dishka_ag2._consts import CONTAINER_NAME, SESSION_CONTAINER_NAME
 from tests.common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,

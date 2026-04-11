@@ -1,11 +1,11 @@
-# dishka-autogen
+# dishka-ag2
 
 Integration of [Dishka](https://github.com/reagento/dishka) DI framework with [AG2](https://github.com/ag2ai/ag2) agent framework.
 
 ## Project structure
 
 ```
-src/dishka_autogen/
+src/dishka_ag2/
   _consts.py      # Constants: container keys, hidden Context parameter, CurrentContainer alias
   _container.py   # Container getters from AG2 Context
   _injectors.py   # inject() decorator using wrap_injection + fast_depends
@@ -60,4 +60,4 @@ tests/
 
 - Python 3.10+, strict mypy, ruff with `ALL` rules
 - No public exports of internal constants (`CONTAINER_NAME`, `SESSION_CONTAINER_NAME`)
-- Tests may import from `dishka_autogen._consts` (allowed via `PLC2701` in ruff.toml)
+- Tests may import from `dishka_ag2._consts` (allowed via `PLC2701` in ruff.toml)

@@ -5,7 +5,7 @@ from autogen.beta.context import Context
 from autogen.beta.events import ToolCallEvent, ToolResultEvent
 from dishka.exception_base import DishkaError
 
-from dishka_autogen import FromDishka, inject
+from dishka_ag2 import FromDishka, inject
 from tests.common import AppDep, AppProvider
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env

@@ -9,7 +9,7 @@ from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from dishka import Provider, Scope, make_async_container, provide
 
-from dishka_autogen import AG2Provider, DishkaMiddleware, FromDishka, inject
+from dishka_ag2 import AG2Provider, DishkaMiddleware, FromDishka, inject
 
 logger = logging.getLogger(__name__)
 

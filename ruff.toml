@@ -10,7 +10,7 @@ indent-width = 4
 target-version = "py310"
 
 include = [
-    "src/dishka_autogen/**/*.py",
+    "src/dishka_ag2/**/*.py",
     "tests/**/*.py",
     "pyproject.toml",
 ]
