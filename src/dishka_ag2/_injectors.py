@@ -5,8 +5,8 @@ from typing import Any, ParamSpec, TypeVar, get_type_hints, overload
 from autogen.beta.context import Context
 from dishka.integrations.base import wrap_injection
 
-from dishka_autogen._consts import CONTEXT_PARAM
-from dishka_autogen._container import (
+from dishka_ag2._consts import CONTEXT_PARAM
+from dishka_ag2._container import (
     get_async_container_from_context,
     get_sync_container_from_context,
 )

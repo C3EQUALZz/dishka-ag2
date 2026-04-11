@@ -12,7 +12,7 @@ from dishka import AsyncContainer, Container, Scope
 from dishka.exception_base import DishkaError
 from typing_extensions import override
 
-from dishka_autogen._consts import (
+from dishka_ag2._consts import (
     CONTAINER_NAME,
     SESSION_CONTAINER_NAME,
     CurrentContainer,

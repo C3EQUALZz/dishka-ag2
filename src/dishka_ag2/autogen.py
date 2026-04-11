@@ -4,8 +4,8 @@ from autogen.beta.context import Context
 from autogen.beta.events import BaseEvent, ToolCallEvent
 from dishka import Provider, Scope, from_context
 
-from dishka_autogen._injectors import inject
-from dishka_autogen._middleware import DishkaMiddleware
+from dishka_ag2._injectors import inject
+from dishka_ag2._middleware import DishkaMiddleware
 
 
 class AG2Provider(Provider):
