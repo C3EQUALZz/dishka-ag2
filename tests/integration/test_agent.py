@@ -5,7 +5,7 @@ from typing import NewType
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta import Agent
+from autogen.beta import Agent, PromptedSchema, ResponseSchema, response_schema
 from autogen.beta.annotations import Context
 from autogen.beta.events import (
     BaseEvent,
@@ -206,6 +206,75 @@ async def test_agent_ask_session_scope_with_base_event() -> None:
 
     assert len(results) == 1
     assert "turn:" in results[0]
+
+    await container.close()
+
+
+@pytest.mark.asyncio()
+async def test_agent_ask_with_prompted_response_schema_and_tool_injection(
+    app_provider: AppProvider,
+) -> None:
+    container = make_async_container(app_provider, AG2Provider())
+
+    ocean_count = ResponseSchema(
+        int,
+        name="OceanCount",
+        description="Number of oceans on Earth.",
+    )
+    agent = Agent(
+        "assistant",
+        config=TestConfig(
+            ToolCallEvent(name="check", arguments="{}"),
+            '{"data": 5}',
+        ),
+        response_schema=PromptedSchema(ocean_count),
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+    )
+
+    @agent.tool  # type: ignore[untyped-decorator]
+    @inject
+    async def check(
+        app_dep: FromDishka[AppDep],
+        request_dep: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
+    ) -> str:
+        mock(app_dep, request_dep)
+        return "ok"
+
+    reply = await agent.ask("How many oceans are on Earth?")
+
+    assert await reply.content() == 5
+    app_provider.mock.assert_called_once_with(
+        APP_DEP_VALUE,
+        REQUEST_DEP_VALUE,
+    )
+    app_provider.request_released.assert_called_once()
+
+    await container.close()
+
+
+@pytest.mark.asyncio()
+async def test_agent_ask_with_callable_prompted_response_schema(
+    app_provider: AppProvider,
+) -> None:
+    container = make_async_container(app_provider, AG2Provider())
+
+    @response_schema  # type: ignore[untyped-decorator]
+    def parse_int(content: str) -> int:
+        return int(content.strip())
+
+    agent = Agent(
+        "assistant",
+        config=TestConfig("42"),
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+    )
+
+    reply = await agent.ask(
+        "Return an integer.",
+        response_schema=PromptedSchema(parse_int),
+    )
+
+    assert await reply.content() == 42
 
     await container.close()
 

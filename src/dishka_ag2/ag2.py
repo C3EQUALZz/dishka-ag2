@@ -1,9 +1,16 @@
-__all__ = ("AG2Provider", "DishkaAsyncMiddleware", "DishkaSyncMiddleware", "inject")
+__all__ = (
+    "CONTAINER_NAME",
+    "AG2Provider",
+    "DishkaAsyncMiddleware",
+    "DishkaSyncMiddleware",
+    "inject",
+)
 
 from autogen.beta.context import Context
 from autogen.beta.events import BaseEvent, HumanInputRequest, ToolCallEvent
 from dishka import Provider, Scope, from_context
 
+from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._injectors import inject
 from dishka_ag2._middleware import DishkaAsyncMiddleware, DishkaSyncMiddleware
 
