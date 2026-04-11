@@ -15,7 +15,7 @@ from autogen.beta.events import (
 )
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
-from autogen.beta.tools import tool
+from autogen.beta.tools import Toolkit, tool
 from dishka import Provider, Scope, make_async_container, provide
 
 from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
@@ -121,6 +121,46 @@ async def test_agent_ask_multiple_tool_calls(
     await agent.ask("Increment twice.")
 
     assert call_count == 2
+
+    await container.close()
+
+
+@pytest.mark.asyncio()
+async def test_agent_ask_toolkit_injects_request_deps(
+    app_provider: AppProvider,
+) -> None:
+    container = make_async_container(app_provider, AG2Provider())
+    toolkit = Toolkit()
+
+    @toolkit.tool  # type: ignore[untyped-decorator]
+    @inject
+    async def check(
+        app_dep: FromDishka[AppDep],
+        request_dep: FromDishka[RequestDep],
+        mock: FromDishka[Mock],
+    ) -> str:
+        mock(app_dep, request_dep)
+        return "ok"
+
+    agent = Agent(
+        "assistant",
+        config=TestConfig(
+            ToolCallEvent(name="check", arguments="{}"),
+            "Done.",
+        ),
+        tools=[
+            toolkit,
+        ],
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+    )
+
+    await agent.ask("Check toolkit.")
+
+    app_provider.mock.assert_called_once_with(
+        APP_DEP_VALUE,
+        REQUEST_DEP_VALUE,
+    )
+    app_provider.request_released.assert_called_once()
 
     await container.close()
 
