@@ -33,9 +33,14 @@ def inject_async(
         additional_params = [CONTEXT_PARAM]
         param_name = CONTEXT_PARAM.name
 
+    signature = inspect.signature(func)
+
     return wrap_injection(
         func=func,
-        container_getter=lambda _, p: get_async_container_from_context(p[param_name]),
+        container_getter=lambda args, kwargs: get_async_container_from_context(
+            kwargs.get(param_name)
+            or signature.bind_partial(*args, **kwargs).arguments[param_name],
+        ),
         remove_depends=True,
         is_async=True,
         manage_scope=False,
@@ -51,9 +56,14 @@ def inject_sync(func: Callable[ParamsP, ReturnT]) -> Callable[..., ReturnT]:
         additional_params = [CONTEXT_PARAM]
         param_name = CONTEXT_PARAM.name
 
+    signature = inspect.signature(func)
+
     return wrap_injection(
         func=func,
-        container_getter=lambda _, p: get_sync_container_from_context(p[param_name]),
+        container_getter=lambda args, kwargs: get_sync_container_from_context(
+            kwargs.get(param_name)
+            or signature.bind_partial(*args, **kwargs).arguments[param_name],
+        ),
         remove_depends=True,
         is_async=False,
         manage_scope=False,

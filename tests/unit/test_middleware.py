@@ -79,6 +79,48 @@ async def test_async_request_dependency(
 
 
 @pytest.mark.asyncio()
+async def test_async_injection_uses_positional_context(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+
+        @inject
+        async def handle(
+            context: Context,
+            request_dep: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
+        ) -> str:
+            mock(request_dep)
+            return str(context.variables)
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: ToolCallEvent,
+            ctx: Context,
+        ) -> ToolResultEvent:
+            return ToolResultEvent.from_call(
+                ev,
+                result=await handle(ctx),  # type: ignore[no-untyped-call]
+            )
+
+        result = await instance.on_tool_execution(
+            call_next,
+            event,
+            context,
+        )
+
+        assert result.result.content == "{}"
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio()
 async def test_sync_request_dependency(
     app_provider: AppProvider,
 ) -> None:
