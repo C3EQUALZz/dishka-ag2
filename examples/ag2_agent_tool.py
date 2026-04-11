@@ -1,3 +1,8 @@
+"""Example: @agent.tool decorator approach with all three scopes.
+
+Demonstrates APP, SESSION, and REQUEST scopes using @agent.tool decorator.
+"""
+
 import asyncio
 import logging
 from dataclasses import dataclass, field

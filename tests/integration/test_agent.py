@@ -6,9 +6,16 @@ from unittest.mock import Mock
 
 import pytest
 from autogen.beta import Agent
-from autogen.beta.events import BaseEvent, ToolCallEvent
+from autogen.beta.annotations import Context
+from autogen.beta.events import (
+    BaseEvent,
+    HumanInputRequest,
+    HumanMessage,
+    ToolCallEvent,
+)
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
+from autogen.beta.tools import tool
 from dishka import Provider, Scope, make_async_container, provide
 
 from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
@@ -199,5 +206,159 @@ async def test_agent_ask_session_scope_with_base_event() -> None:
 
     assert len(results) == 1
     assert "turn:" in results[0]
+
+    await container.close()
+
+
+LLMCallDep = NewType("LLMCallDep", str)
+
+
+class LLMCallProvider(Provider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.mock = Mock()
+        self.request_released = Mock()
+
+    @provide(scope=Scope.REQUEST)
+    def llm_call_dep(self) -> Iterable[LLMCallDep]:
+        yield LLMCallDep("llm_call_value")
+        self.request_released()
+
+    @provide(scope=Scope.APP)
+    def get_mock(self) -> Mock:
+        return self.mock
+
+
+@pytest.mark.asyncio()
+async def test_agent_ask_llm_call_scope() -> None:
+    llm_provider = LLMCallProvider()
+    container = make_async_container(llm_provider, AG2Provider())
+
+    agent = Agent(
+        "assistant",
+        config=TestConfig(
+            ToolCallEvent(name="ping", arguments="{}"),
+            "Done.",
+        ),
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+    )
+
+    @agent.tool  # type: ignore[untyped-decorator]
+    @inject
+    async def ping(
+        dep: FromDishka[LLMCallDep],
+        mock: FromDishka[Mock],
+    ) -> str:
+        mock(dep)
+        return "pong"
+
+    await agent.ask("Ping.")
+
+    llm_provider.mock.assert_called_once_with(LLMCallDep("llm_call_value"))
+    assert llm_provider.request_released.call_count >= 1
+
+    await container.close()
+
+
+HumanInputDep = NewType("HumanInputDep", str)
+
+
+class HumanInputProvider(Provider):
+    def __init__(self) -> None:
+        super().__init__()
+        self.mock = Mock()
+        self.request_released = Mock()
+
+    @provide(scope=Scope.REQUEST)
+    def human_input_dep(
+        self,
+        event: HumanInputRequest,
+    ) -> Iterable[HumanInputDep]:
+        yield HumanInputDep(f"input:{event.content}")
+        self.request_released()
+
+    @provide(scope=Scope.APP)
+    def get_mock(self) -> Mock:
+        return self.mock
+
+
+@pytest.mark.asyncio()
+async def test_hitl_hook_inject_via_argument() -> None:
+    provider = HumanInputProvider()
+    container = make_async_container(provider, AG2Provider())
+
+    @inject
+    async def my_hitl(
+        event: HumanInputRequest,
+        dep: FromDishka[HumanInputDep],
+        mock: FromDishka[Mock],
+    ) -> HumanMessage:
+        mock(dep)
+        return HumanMessage(content="yes")
+
+    @tool  # type: ignore[untyped-decorator]
+    @inject
+    async def ask_human(context: Context) -> str:
+        result: str = await context.input("Confirm?")
+        return result
+
+    agent = Agent(
+        "assistant",
+        config=TestConfig(
+            ToolCallEvent(name="ask_human", arguments="{}"),
+            "Done.",
+        ),
+        tools=[ask_human],
+        hitl_hook=my_hitl,
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+    )
+
+    await agent.ask("Test.")
+
+    provider.mock.assert_called_once_with(
+        HumanInputDep("input:Confirm?"),
+    )
+    provider.request_released.assert_called()
+
+    await container.close()
+
+
+@pytest.mark.asyncio()
+async def test_hitl_hook_inject_via_decorator() -> None:
+    provider = HumanInputProvider()
+    container = make_async_container(provider, AG2Provider())
+
+    @tool  # type: ignore[untyped-decorator]
+    @inject
+    async def ask_human(context: Context) -> str:
+        result: str = await context.input("Approve?")
+        return result
+
+    agent = Agent(
+        "assistant",
+        config=TestConfig(
+            ToolCallEvent(name="ask_human", arguments="{}"),
+            "Done.",
+        ),
+        tools=[ask_human],
+        middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+    )
+
+    @agent.hitl_hook  # type: ignore[untyped-decorator]
+    @inject
+    async def on_human(
+        event: HumanInputRequest,
+        dep: FromDishka[HumanInputDep],
+        mock: FromDishka[Mock],
+    ) -> HumanMessage:
+        mock(dep)
+        return HumanMessage(content="approved")
+
+    await agent.ask("Test.")
+
+    provider.mock.assert_called_once_with(
+        HumanInputDep("input:Approve?"),
+    )
+    provider.request_released.assert_called()
 
     await container.close()

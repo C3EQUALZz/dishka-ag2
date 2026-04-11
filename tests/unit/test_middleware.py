@@ -1,11 +1,14 @@
 """Tests for Dishka middleware scope lifecycle."""
 
+from collections.abc import Sequence
 from unittest.mock import Mock
 
 import pytest
 from autogen.beta.context import Context
 from autogen.beta.events import (
     BaseEvent,
+    HumanInputRequest,
+    HumanMessage,
     ModelResponse,
     ToolCallEvent,
     ToolResultEvent,
@@ -24,7 +27,12 @@ from tests.common import (
     RequestDep,
     SessionDep,
 )
-from tests.conftest import make_context, make_tool_call
+from tests.conftest import (
+    make_context,
+    make_human_input_request,
+    make_llm_events,
+    make_tool_call,
+)
 from tests.unit.conftest import create_ag2_env
 
 # --- REQUEST scope (on_tool_execution) ---
@@ -476,3 +484,377 @@ async def test_session_container_cleanup(
         await instance.on_turn(turn_body, event, context)
 
         assert SESSION_CONTAINER_NAME not in context.dependencies
+
+
+# --- LLM call scope (on_llm_call) ---
+
+
+@pytest.mark.asyncio()
+async def test_async_llm_call_request_dependency(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        events = make_llm_events()
+
+        @inject
+        async def handle(
+            request_dep: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
+        ) -> str:
+            mock(request_dep)
+            return "ok"
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            evs: Sequence[BaseEvent],
+            ctx: Context,
+        ) -> ModelResponse:
+            result = await handle(___dishka_context=ctx)
+            return ModelResponse(message=result)
+
+        result = await instance.on_llm_call(call_next, events, context)
+        assert result.message == "ok"
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_sync_llm_call_request_dependency(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=False,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        events = make_llm_events()
+
+        @inject
+        def handle(
+            request_dep: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
+        ) -> str:
+            mock(request_dep)
+            return "ok"
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            evs: Sequence[BaseEvent],
+            ctx: Context,
+        ) -> ModelResponse:
+            result = handle(___dishka_context=ctx)
+            return ModelResponse(message=result)
+
+        result = await instance.on_llm_call(call_next, events, context)
+        assert result.message == "ok"
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_llm_call_container_cleanup(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        events = make_llm_events()
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            evs: Sequence[BaseEvent],
+            ctx: Context,
+        ) -> ModelResponse:
+            assert CONTAINER_NAME in ctx.dependencies
+            return ModelResponse(message="ok")
+
+        await instance.on_llm_call(call_next, events, context)
+        assert CONTAINER_NAME not in context.dependencies
+
+
+@pytest.mark.asyncio()
+async def test_llm_call_uses_session_container(
+    app_provider: AppProvider,
+) -> None:
+    session_deps: list[SessionDep] = []
+
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+
+        @inject
+        async def handle(
+            session_dep: FromDishka[SessionDep],
+            request_dep: FromDishka[RequestDep],
+        ) -> str:
+            session_deps.append(session_dep)
+            return str(request_dep)
+
+        instance = middleware(event, context)
+
+        async def turn_body(
+            ev: BaseEvent,
+            ctx: Context,
+        ) -> ModelResponse:
+            events = make_llm_events()
+
+            async def llm_call_next(
+                evs: Sequence[BaseEvent],
+                llm_ctx: Context,
+            ) -> ModelResponse:
+                await handle(___dishka_context=llm_ctx)
+                return ModelResponse(message="ok")
+
+            await instance.on_llm_call(llm_call_next, events, ctx)
+
+            tool_event = make_tool_call()
+
+            async def tool_call_next(
+                tool_ev: ToolCallEvent,
+                tool_ctx: Context,
+            ) -> ToolResultEvent:
+                return ToolResultEvent.from_call(
+                    tool_ev,
+                    result=await handle(___dishka_context=tool_ctx),
+                )
+
+            await instance.on_tool_execution(
+                tool_call_next,
+                tool_event,
+                ctx,
+            )
+            return ModelResponse(message="done")
+
+        await instance.on_turn(turn_body, event, context)
+
+    assert len(session_deps) == 2
+    assert session_deps[0] is session_deps[1]
+    assert app_provider.session_released.call_count == 1
+    assert app_provider.request_released.call_count == 2
+
+
+# --- Human input scope (on_human_input) ---
+
+
+@pytest.mark.asyncio()
+async def test_async_human_input_request_dependency(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        human_event = make_human_input_request()
+
+        @inject
+        async def handle(
+            request_dep: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
+        ) -> str:
+            mock(request_dep)
+            return "yes"
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: HumanInputRequest,
+            ctx: Context,
+        ) -> HumanMessage:
+            await handle(___dishka_context=ctx)
+            return HumanMessage(content="yes")
+
+        result = await instance.on_human_input(
+            call_next,
+            human_event,
+            context,
+        )
+        assert result.content == "yes"
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_sync_human_input_request_dependency(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=False,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        human_event = make_human_input_request()
+
+        @inject
+        def handle(
+            request_dep: FromDishka[RequestDep],
+            mock: FromDishka[Mock],
+        ) -> str:
+            mock(request_dep)
+            return "yes"
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: HumanInputRequest,
+            ctx: Context,
+        ) -> HumanMessage:
+            handle(___dishka_context=ctx)
+            return HumanMessage(content="yes")
+
+        result = await instance.on_human_input(
+            call_next,
+            human_event,
+            context,
+        )
+        assert result.content == "yes"
+        app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
+        app_provider.request_released.assert_called_once()
+
+
+@pytest.mark.asyncio()
+async def test_human_input_container_cleanup(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        human_event = make_human_input_request()
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: HumanInputRequest,
+            ctx: Context,
+        ) -> HumanMessage:
+            assert CONTAINER_NAME in ctx.dependencies
+            return HumanMessage(content="ok")
+
+        await instance.on_human_input(
+            call_next,
+            human_event,
+            context,
+        )
+        assert CONTAINER_NAME not in context.dependencies
+
+
+@pytest.mark.asyncio()
+async def test_human_input_provides_event(
+    app_provider: AppProvider,
+) -> None:
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+        human_event = make_human_input_request("Approve?")
+
+        @inject
+        async def handle(
+            hi_request: FromDishka[HumanInputRequest],
+        ) -> str:
+            return str(hi_request.content)
+
+        instance = middleware(event, context)
+
+        async def call_next(
+            ev: HumanInputRequest,
+            ctx: Context,
+        ) -> HumanMessage:
+            content: str = await handle(___dishka_context=ctx)  # type: ignore[no-untyped-call]
+            return HumanMessage(content=content)
+
+        result = await instance.on_human_input(
+            call_next,
+            human_event,
+            context,
+        )
+        assert result.content == "Approve?"
+
+
+@pytest.mark.asyncio()
+async def test_human_input_uses_session_container(
+    app_provider: AppProvider,
+) -> None:
+    session_deps: list[SessionDep] = []
+
+    async with create_ag2_env(
+        app_provider,
+        use_async_container=True,
+    ) as (_, middleware):
+        context = make_context()
+        event = make_tool_call()
+
+        @inject
+        async def handle(
+            session_dep: FromDishka[SessionDep],
+            request_dep: FromDishka[RequestDep],
+        ) -> str:
+            session_deps.append(session_dep)
+            return str(request_dep)
+
+        instance = middleware(event, context)
+
+        async def turn_body(
+            ev: BaseEvent,
+            ctx: Context,
+        ) -> ModelResponse:
+            human_event = make_human_input_request()
+
+            async def human_call_next(
+                hi_ev: HumanInputRequest,
+                hi_ctx: Context,
+            ) -> HumanMessage:
+                await handle(___dishka_context=hi_ctx)
+                return HumanMessage(content="ok")
+
+            await instance.on_human_input(
+                human_call_next,
+                human_event,
+                ctx,
+            )
+
+            tool_event = make_tool_call()
+
+            async def tool_call_next(
+                tool_ev: ToolCallEvent,
+                tool_ctx: Context,
+            ) -> ToolResultEvent:
+                return ToolResultEvent.from_call(
+                    tool_ev,
+                    result=await handle(___dishka_context=tool_ctx),
+                )
+
+            await instance.on_tool_execution(
+                tool_call_next,
+                tool_event,
+                ctx,
+            )
+            return ModelResponse(message="done")
+
+        await instance.on_turn(turn_body, event, context)
+
+    assert len(session_deps) == 2
+    assert session_deps[0] is session_deps[1]
+    assert app_provider.session_released.call_count == 1
+    assert app_provider.request_released.call_count == 2

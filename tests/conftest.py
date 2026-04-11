@@ -1,6 +1,6 @@
 import pytest
 from autogen.beta.context import Context
-from autogen.beta.events import ToolCallEvent
+from autogen.beta.events import HumanInputRequest, ModelRequest, ToolCallEvent
 
 from tests.common import AppProvider, DummyStream
 
@@ -11,6 +11,16 @@ def make_context() -> Context:
 
 def make_tool_call(name: str = "test_tool") -> ToolCallEvent:
     return ToolCallEvent(name=name)
+
+
+def make_human_input_request(
+    content: str = "Please confirm",
+) -> HumanInputRequest:
+    return HumanInputRequest(content=content)
+
+
+def make_llm_events() -> list[ModelRequest]:
+    return [ModelRequest(content="Hello")]
 
 
 @pytest.fixture()
