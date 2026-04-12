@@ -2,29 +2,20 @@ from autogen.beta.context import Context
 from dishka import AsyncContainer, Container
 from dishka.exception_base import DishkaError
 
-from dishka_ag2._consts import (
-    CONTAINER_NAME,
-    SESSION_CONTAINER_NAME,
-    CurrentContainer,
-)
+from dishka_ag2._consts import CONTAINER_NAME, CurrentContainer
 
 
 def _get_container_from_context(context: Context) -> CurrentContainer:
     container: CurrentContainer | None = context.dependencies.get(
         CONTAINER_NAME,
     )
-    if container is not None:
-        return container
-
-    container = context.dependencies.get(SESSION_CONTAINER_NAME)
-    if container is not None:
-        return container
-
-    msg = (
-        "Dishka container not found in Context.dependencies. "
-        "Make sure DishkaAsyncMiddleware or DishkaSyncMiddleware is configured."
-    )
-    raise DishkaError(msg)
+    if container is None:
+        msg = (
+            "Dishka container not found in Context.dependencies. "
+            "Make sure DishkaAsyncMiddleware or DishkaSyncMiddleware is configured."
+        )
+        raise DishkaError(msg)
+    return container
 
 
 def get_async_container_from_context(context: Context) -> AsyncContainer:

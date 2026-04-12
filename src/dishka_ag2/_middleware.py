@@ -20,6 +20,7 @@ from autogen.beta.middleware import (
 from dishka import AsyncContainer, Container
 from typing_extensions import override
 
+from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._scopes import (
     async_request_scope,
     async_session_scope,
@@ -38,6 +39,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> None:
         super().__init__(event, context)
         self._container: Final[AsyncContainer] = container
+        context.dependencies.setdefault(CONTAINER_NAME, container)
 
     @override
     async def on_turn(
@@ -98,6 +100,7 @@ class DishkaSyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> None:
         super().__init__(event, context)
         self._container: Final[Container] = container
+        context.dependencies.setdefault(CONTAINER_NAME, container)
 
     @override
     async def on_turn(

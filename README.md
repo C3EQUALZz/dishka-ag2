@@ -27,10 +27,8 @@ Though it is not required, you can use *dishka-ag2* integration. It features:
 | `Toolkit` / custom `Tool` execution             | yes                 | yes             | yes             | Works for actual tool functions if the custom tool forwards `middleware` in `register()`.                                                        |
 | `on_llm_call` middleware path                   | yes                 | yes             | yes             | `REQUEST` is opened for every model call.                                                                                                        |
 | HITL hooks (`hitl_hook=` / `@agent.hitl_hook`)  | yes                 | yes             | yes             | `HumanInputRequest` is available in `REQUEST` scope.                                                                                             |
-| `@agent.prompt`                                 | app-only workaround | no              | no              | Dynamic prompts run before middleware scopes. Use `dependencies={CONTAINER_NAME: container}` for APP-scope dependencies.                         |
-| `response_schema` validators                    | no                  | no              | no              | Validation happens after `agent.ask()` returns, so middleware scopes are already closed. Use plain validators for now.                           |
-| custom tool `schemas()`                         | app-only workaround | no              | no              | `schemas()` runs before middleware scopes. Use `dependencies={CONTAINER_NAME: container}` for APP-scope dependencies.                            |
-| custom tool `register()`                        | limited             | no              | no              | AG2 calls `register()` synchronously before tool execution. With `AsyncContainer`, do not inject there; inject in actual tool functions instead. |
+| `@agent.prompt`                                 | app-only workaround | no              | no              | Dynamic prompts run before middleware is constructed. Use `dependencies={CONTAINER_NAME: container}` for APP-scope dependencies.                 |
+| `response_schema` validators                    | yes                 | no              | no              | Validation runs inside the turn, so APP-scope dependencies resolve automatically. SESSION/REQUEST scopes are already closed.                     |
 
 See the examples directory for runnable examples:
 

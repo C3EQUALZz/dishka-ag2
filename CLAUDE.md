@@ -28,13 +28,16 @@ AG2 uses `fast_depends` for DI. The `inject()` decorator adds a hidden `___dishk
 
 ### Scope mapping
 
-| Dishka Scope     | AG2 Hook            | Container stored in                         |
-|------------------|---------------------|---------------------------------------------|
-| `Scope.APP`      | —                   | Root container passed to middleware          |
-| `Scope.SESSION`  | `on_turn`           | `context.dependencies["dishka_session_container"]` |
-| `Scope.REQUEST`  | `on_tool_execution` | `context.dependencies["dishka_container"]`  |
+All containers share a single key `context.dependencies["dishka_container"]`. The
+middleware puts the root container there on `__init__`, and each scope hook uses
+save/restore: it captures the current value, overwrites with the new child
+container, and restores on exit.
 
-`on_tool_execution` creates REQUEST from SESSION (if available) or APP (fallback).
+| Dishka Scope     | AG2 Hook            | How it gets there                                   |
+|------------------|---------------------|-----------------------------------------------------|
+| `Scope.APP`      | middleware `__init__` | Root container set in `context.dependencies`      |
+| `Scope.SESSION`  | `on_turn`           | Child of whatever is currently under the key (root) |
+| `Scope.REQUEST`  | `on_tool_execution`, `on_llm_call`, `on_human_input` | Child of SESSION (if in turn) or APP |
 
 ### AG2Provider context types
 
@@ -59,5 +62,5 @@ tests/
 ## Code style
 
 - Python 3.10+, strict mypy, ruff with `ALL` rules
-- No public exports of internal constants (`CONTAINER_NAME`, `SESSION_CONTAINER_NAME`)
+- `CONTAINER_NAME` is public for the `@agent.prompt` workaround (prompts run before middleware `__init__`)
 - Tests may import from `dishka_ag2._consts` (allowed via `PLC2701` in ruff.toml)
