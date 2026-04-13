@@ -5,8 +5,13 @@ from contextlib import asynccontextmanager
 from autogen.beta.middleware import Middleware
 from dishka import make_async_container, make_container
 
-from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, DishkaSyncMiddleware
-from dishka_ag2._consts import CurrentContainer
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    DishkaAsyncMiddleware,
+    DishkaSyncMiddleware,
+)
+from dishka_ag2._types import CurrentContainer
 from tests.common import AppProvider
 
 
@@ -32,10 +37,18 @@ async def create_ag2_env(
     container: CurrentContainer
 
     if use_async_container:
-        container = make_async_container(provider, AG2Provider())
+        container = make_async_container(
+            provider,
+            AG2Provider(),
+            scopes=AG2Scope,
+        )
         middleware = Middleware(DishkaAsyncMiddleware, container=container)
     else:
-        container = make_container(provider, AG2Provider())
+        container = make_container(
+            provider,
+            AG2Provider(),
+            scopes=AG2Scope,
+        )
         middleware = Middleware(DishkaSyncMiddleware, container=container)
 
     try:

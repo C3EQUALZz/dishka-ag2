@@ -8,7 +8,9 @@ import pytest
 from autogen.beta.annotations import Context
 from autogen.beta.events import HumanInputRequest
 from autogen.beta.tools import tool
-from dishka import Provider, Scope, provide
+from dishka import Provider, provide
+
+from dishka_ag2 import AG2Scope
 
 AuditLog = NewType("AuditLog", str)
 
@@ -19,11 +21,11 @@ class BaseHitlProvider(Provider):
         self.mock = Mock()
         self.audit_released = Mock()
 
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def get_mock(self) -> Mock:
         return self.mock
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def audit(
         self,
         event: HumanInputRequest,

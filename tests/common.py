@@ -9,7 +9,9 @@ from autogen.beta.context import Context, Stream, SubId
 from autogen.beta.events import BaseEvent
 from autogen.beta.events.conditions import Condition
 from autogen.beta.types import ClassInfo
-from dishka import Provider, Scope, provide
+from dishka import Provider, provide
+
+from dishka_ag2 import AG2Scope
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = AppDep("APP")
@@ -32,26 +34,26 @@ class AppProvider(Provider):
         self.mock = Mock()
         self._app_mock = AppMock(Mock())
 
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def app(self) -> Iterable[AppDep]:
         yield APP_DEP_VALUE
         self.app_released()
 
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def app_mock(self) -> AppMock:
         return self._app_mock
 
-    @provide(scope=Scope.SESSION)
+    @provide(scope=AG2Scope.SESSION)
     def session(self) -> Iterable[SessionDep]:
         yield SESSION_DEP_VALUE
         self.session_released()
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def request(self) -> Iterable[RequestDep]:
         yield REQUEST_DEP_VALUE
         self.request_released()
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def get_mock(self) -> Mock:
         return self.mock
 

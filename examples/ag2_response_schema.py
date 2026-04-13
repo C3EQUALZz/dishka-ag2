@@ -9,9 +9,15 @@ import logging
 from autogen.beta import Agent, PromptedSchema, response_schema
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, make_async_container, provide
 
-from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    DishkaAsyncMiddleware,
+    FromDishka,
+    inject,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,7 +28,7 @@ class ParserService:
 
 
 class MyProvider(Provider):
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def parser_service(self) -> ParserService:
         return ParserService()
 
@@ -42,7 +48,7 @@ async def parse_int_with_dishka(
 
 
 provider = MyProvider()
-container = make_async_container(provider, AG2Provider())
+container = make_async_container(provider, AG2Provider(), scopes=AG2Scope)
 
 plain_schema_agent = Agent(
     "plain_schema_agent",

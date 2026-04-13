@@ -6,18 +6,19 @@ from typing import Any, overload
 from autogen.beta.context import Context
 from dishka.integrations.base import wrap_injection
 
-from dishka_ag2._consts import PENDING_REQUEST_CONTEXT, ParamsP, ReturnT
+from dishka_ag2._consts import PENDING_REQUEST_CONTEXT
 from dishka_ag2._container import (
     get_async_container_from_context,
     get_sync_container_from_context,
     walk_to_root,
 )
-from dishka_ag2._context import build_context_getter
-from dishka_ag2._scopes import async_request_scope, sync_request_scope
+from dishka_ag2._container_context import async_request_scope, sync_request_scope
+from dishka_ag2._context_getter import build_context_getter
+from dishka_ag2._types import ParamsP, ReturnT
 
 
-def _request_context_data(context: Context) -> dict[type, Any]:
-    pending: dict[type, Any] | None = context.dependencies.get(
+def _request_context_data(context: Context) -> dict[Any, Any]:
+    pending: dict[Any, Any] | None = context.dependencies.get(
         PENDING_REQUEST_CONTEXT,
     )
     return pending if pending is not None else {Context: context}

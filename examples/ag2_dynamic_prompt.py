@@ -11,11 +11,12 @@ import logging
 from autogen.beta import Agent, Context
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (
     CONTAINER_NAME,
     AG2Provider,
+    AG2Scope,
     DishkaAsyncMiddleware,
     FromDishka,
     inject,
@@ -33,13 +34,13 @@ class PromptService:
 
 
 class MyProvider(Provider):
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def prompt_service(self) -> PromptService:
         return PromptService()
 
 
 provider = MyProvider()
-container = make_async_container(provider, AG2Provider())
+container = make_async_container(provider, AG2Provider(), scopes=AG2Scope)
 
 agent = Agent(
     "assistant",

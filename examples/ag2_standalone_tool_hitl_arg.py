@@ -15,9 +15,15 @@ from autogen.beta.events import HumanInputRequest, HumanMessage, ToolCallEvent
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import tool
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, make_async_container, provide
 
-from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    DishkaAsyncMiddleware,
+    FromDishka,
+    inject,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +32,7 @@ AuditLog = NewType("AuditLog", str)
 
 
 class AuditProvider(Provider):
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def audit_log(
         self,
         event: HumanInputRequest,
@@ -44,7 +50,7 @@ class ConfirmationService:
 
 
 class ToolProvider(Provider):
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def confirmation_service(
         self,
         event: ToolCallEvent,
@@ -86,6 +92,7 @@ container = make_async_container(
     provider_audit,
     provider_tool,
     AG2Provider(),
+    scopes=AG2Scope,
 )
 
 agent = Agent(

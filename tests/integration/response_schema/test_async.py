@@ -8,9 +8,9 @@ import pytest
 from autogen.beta import Agent, PromptedSchema, ResponseSchema, response_schema
 from autogen.beta.events import ToolCallEvent
 from autogen.beta.testing import TestConfig
-from dishka import Provider, Scope, provide
+from dishka import Provider, provide
 
-from dishka_ag2 import FromDishka, inject
+from dishka_ag2 import AG2Scope, FromDishka, inject
 from tests.common import APP_DEP_VALUE, REQUEST_DEP_VALUE, AppDep, AppProvider, RequestDep
 from tests.integration.conftest import async_env
 
@@ -21,7 +21,7 @@ class ParserService:
 
 
 class SchemaProvider(Provider):
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def parser(self) -> ParserService:
         return ParserService()
 

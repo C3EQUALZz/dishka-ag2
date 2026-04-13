@@ -11,9 +11,9 @@ from autogen.beta import Agent
 from autogen.beta.annotations import Context
 from autogen.beta.events import ToolCallEvent
 from autogen.beta.testing import TestConfig
-from dishka import Provider, Scope, provide
+from dishka import Provider, provide
 
-from dishka_ag2 import CONTAINER_NAME, FromDishka, inject
+from dishka_ag2 import CONTAINER_NAME, AG2Scope, FromDishka, inject
 from tests.integration.conftest import async_env
 
 TenantId = NewType("TenantId", str)
@@ -25,11 +25,11 @@ class PromptService:
 
 
 class PromptProvider(Provider):
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def prompt_service(self) -> PromptService:
         return PromptService()
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def tenant(self) -> TenantId:
         return TenantId("acme")
 

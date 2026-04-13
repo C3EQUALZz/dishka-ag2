@@ -11,9 +11,9 @@ from autogen.beta.annotations import Context
 from autogen.beta.events import HumanInputRequest, HumanMessage, ToolCallEvent
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import tool
-from dishka import Scope, provide
+from dishka import provide
 
-from dishka_ag2 import FromDishka, inject
+from dishka_ag2 import AG2Scope, FromDishka, inject
 from tests.integration.conftest import async_env
 from tests.integration.hitl.conftest import AuditLog, BaseHitlProvider
 
@@ -25,7 +25,7 @@ class ConfirmationService:
 
 
 class HitlProvider(BaseHitlProvider):
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def confirmation(
         self,
         event: ToolCallEvent,

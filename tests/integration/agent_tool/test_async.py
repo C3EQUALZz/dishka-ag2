@@ -13,9 +13,9 @@ import pytest
 from autogen.beta import Agent
 from autogen.beta.events import ToolCallEvent
 from autogen.beta.testing import TestConfig
-from dishka import Provider, Scope, provide
+from dishka import Provider, provide
 
-from dishka_ag2 import FromDishka, inject
+from dishka_ag2 import AG2Scope, FromDishka, inject
 from tests.common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -47,19 +47,19 @@ class AgentToolProvider(Provider):
         super().__init__()
         self.mock = Mock()
 
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def get_mock(self) -> Mock:
         return self.mock
 
-    @provide(scope=Scope.SESSION)
+    @provide(scope=AG2Scope.SESSION)
     def conversation(self) -> ConversationState:
         return ConversationState()
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def tool_request(self, event: ToolCallEvent) -> ToolRequestState:
         return ToolRequestState(tool_name=event.name)
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def greeting(
         self,
         conversation: ConversationState,

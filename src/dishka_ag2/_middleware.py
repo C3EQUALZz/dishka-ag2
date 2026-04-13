@@ -21,7 +21,7 @@ from dishka import AsyncContainer, Container
 from typing_extensions import override
 
 from dishka_ag2._consts import CONTAINER_NAME
-from dishka_ag2._scopes import (
+from dishka_ag2._container_context import (
     async_session_scope,
     stash_request_context,
     sync_session_scope,
@@ -49,7 +49,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> ModelResponse:
         context_data = {BaseEvent: event, Context: context}
 
-        async with async_session_scope(context, self._container, context_data):
+        async with async_session_scope(context, context_data):
             return await call_next(event, context)
 
     @override
@@ -110,7 +110,7 @@ class DishkaSyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> ModelResponse:
         context_data = {BaseEvent: event, Context: context}
 
-        with sync_session_scope(context, self._container, context_data):
+        with sync_session_scope(context, context_data):
             return await call_next(event, context)
 
     @override

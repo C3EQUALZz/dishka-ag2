@@ -10,9 +10,15 @@ from autogen.beta.events import ToolCallEvent
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import Toolkit
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, make_async_container, provide
 
-from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    DishkaAsyncMiddleware,
+    FromDishka,
+    inject,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,15 +53,15 @@ class WeatherService:
 
 
 class MyProvider(Provider):
-    @provide(scope=Scope.SESSION)
+    @provide(scope=AG2Scope.SESSION)
     def session_state(self) -> SessionState:
         return SessionState()
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def tool_request_state(self, event: ToolCallEvent) -> ToolRequestState:
         return ToolRequestState(tool_name=event.name)
 
-    @provide(scope=Scope.REQUEST)
+    @provide(scope=AG2Scope.REQUEST)
     def weather_service(
         self,
         session: SessionState,
@@ -79,7 +85,7 @@ async def get_weather(
 
 
 provider = MyProvider()
-container = make_async_container(provider, AG2Provider())
+container = make_async_container(provider, AG2Provider(), scopes=AG2Scope)
 
 agent = Agent(
     "assistant",

@@ -16,9 +16,15 @@ from autogen.beta.events import ToolCallEvent
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import tool
-from dishka import Provider, Scope, make_async_container, provide
+from dishka import Provider, make_async_container, provide
 
-from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    DishkaAsyncMiddleware,
+    FromDishka,
+    inject,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +44,11 @@ class LLMCallCounter:
 
 
 class MyProvider(Provider):
-    @provide(scope=Scope.APP)
+    @provide(scope=AG2Scope.APP)
     def llm_call_counter(self) -> LLMCallCounter:
         return LLMCallCounter()
 
-    @provide(scope=Scope.SESSION)
+    @provide(scope=AG2Scope.SESSION)
     def session_tracker(self) -> SessionTracker:
         return SessionTracker()
 
@@ -61,7 +67,7 @@ async def greet_user(
 
 
 provider = MyProvider()
-container = make_async_container(provider, AG2Provider())
+container = make_async_container(provider, AG2Provider(), scopes=AG2Scope)
 
 agent = Agent(
     "assistant",

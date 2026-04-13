@@ -5,14 +5,19 @@ from typing import Any
 from autogen.beta.middleware import Middleware
 from dishka import Provider, make_async_container, make_container
 
-from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, DishkaSyncMiddleware
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    DishkaAsyncMiddleware,
+    DishkaSyncMiddleware,
+)
 
 
 @asynccontextmanager
 async def async_env(
     *providers: Provider,
 ) -> AsyncIterator[tuple[Any, Middleware]]:
-    container = make_async_container(*providers, AG2Provider())
+    container = make_async_container(*providers, AG2Provider(), scopes=AG2Scope)
     middleware = Middleware(DishkaAsyncMiddleware, container=container)
     try:
         yield container, middleware
@@ -24,7 +29,7 @@ async def async_env(
 async def sync_env(
     *providers: Provider,
 ) -> AsyncIterator[tuple[Any, Middleware]]:
-    container = make_container(*providers, AG2Provider())
+    container = make_container(*providers, AG2Provider(), scopes=AG2Scope)
     middleware = Middleware(DishkaSyncMiddleware, container=container)
     try:
         yield container, middleware
