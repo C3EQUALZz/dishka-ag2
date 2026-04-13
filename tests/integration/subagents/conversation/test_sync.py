@@ -1,4 +1,4 @@
-"""Conversation container injection with sync Dishka container."""
+"""CONVERSATION scope handle injection with sync Dishka container."""
 
 from collections.abc import Iterable
 from dataclasses import dataclass, field

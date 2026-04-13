@@ -1,0 +1,1 @@
+"""Middleware APP scope tests."""
