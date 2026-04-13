@@ -3,8 +3,6 @@
 Mirrors examples/ag2_standalone_tool_hitl.py.
 """
 
-from collections.abc import Iterable
-from typing import NewType
 from unittest.mock import Mock
 
 import pytest
@@ -13,12 +11,11 @@ from autogen.beta.annotations import Context
 from autogen.beta.events import HumanInputRequest, HumanMessage, ToolCallEvent
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import tool
-from dishka import Provider, Scope, provide
+from dishka import Scope, provide
 
 from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import async_env
-
-AuditLog = NewType("AuditLog", str)
+from tests.integration.hitl.conftest import AuditLog, BaseHitlProvider
 
 
 class ConfirmationService:
@@ -27,24 +24,7 @@ class ConfirmationService:
         self.confirmed = False
 
 
-class HitlProvider(Provider):
-    def __init__(self) -> None:
-        super().__init__()
-        self.mock = Mock()
-        self.audit_released = Mock()
-
-    @provide(scope=Scope.APP)
-    def get_mock(self) -> Mock:
-        return self.mock
-
-    @provide(scope=Scope.REQUEST)
-    def audit(
-        self,
-        event: HumanInputRequest,
-    ) -> Iterable[AuditLog]:
-        yield AuditLog(f"asked: {event.content}")
-        self.audit_released()
-
+class HitlProvider(BaseHitlProvider):
     @provide(scope=Scope.REQUEST)
     def confirmation(
         self,

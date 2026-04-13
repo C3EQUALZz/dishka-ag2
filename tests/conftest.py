@@ -9,8 +9,11 @@ def make_context() -> Context:
     return Context(stream=DummyStream())
 
 
-def make_tool_call(name: str = "test_tool") -> ToolCallEvent:
-    return ToolCallEvent(name=name)
+def make_tool_call(
+    name: str = "test_tool",
+    arguments: str = "{}",
+) -> ToolCallEvent:
+    return ToolCallEvent(name=name, arguments=arguments)
 
 
 def make_human_input_request(
