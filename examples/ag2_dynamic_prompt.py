@@ -1,7 +1,8 @@
 """Example: @agent.prompt with Dishka integration.
 
-AG2 builds dynamic prompts before middleware starts the turn, so injected
-dynamic prompts can only use dependencies available from the root container.
+AG2 builds dynamic prompts before middleware starts the turn, so pass the root
+container via Agent(..., dependencies={CONTAINER_NAME: container}). Then
+@inject can open REQUEST scope for the prompt function.
 """
 
 import asyncio

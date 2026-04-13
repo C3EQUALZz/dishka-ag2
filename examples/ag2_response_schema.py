@@ -1,7 +1,6 @@
 """Example: response_schema with Dishka middleware.
 
-Demonstrates that PromptedSchema works with Dishka middleware, but an injected
-response validator is not supported by the current scope lifecycle.
+Demonstrates PromptedSchema validators with injected REQUEST dependencies.
 """
 
 import asyncio
@@ -11,7 +10,6 @@ from autogen.beta import Agent, PromptedSchema, response_schema
 from autogen.beta.middleware import Middleware
 from autogen.beta.testing import TestConfig
 from dishka import Provider, Scope, make_async_container, provide
-from dishka.exception_base import DishkaError
 
 from dishka_ag2 import AG2Provider, DishkaAsyncMiddleware, FromDishka, inject
 
@@ -73,12 +71,7 @@ async def main() -> None:
         logger.info("[plain response_schema] %s", await plain_reply.content())
 
         injected_reply = await injected_schema_agent.ask("Return 43.")
-        try:
-            result = await injected_reply.content()
-        except DishkaError as exc:
-            logger.info("[injected response_schema] not supported yet: %s", exc)
-        else:
-            logger.info("[injected response_schema] %s", result)
+        logger.info("[injected response_schema] %s", await injected_reply.content())
     finally:
         await container.close()
 

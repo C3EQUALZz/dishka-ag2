@@ -6,37 +6,37 @@
 
 Though it is not required, you can use *dishka-ag2* integration. It features:
 
-* `APP`, `SESSION` and `REQUEST` scope management using AG2 beta middleware
+* `APP`, `SESSION` and `REQUEST` scope management using AG2 beta middleware and `@inject`
 * `AG2Provider` for working with `BaseEvent`, `Context`, `ToolCallEvent` and `HumanInputRequest` in container
 * Automatic injection of dependencies via `@inject` in supported AG2 hooks
 
 ### Scope mapping
 
-| Dishka scope    | AG2 lifecycle                                        | Description                                                                                    |
-|-----------------|------------------------------------------------------|------------------------------------------------------------------------------------------------|
-| `Scope.APP`     | Root container                                       | Lives for the application/container lifetime.                                                  |
-| `Scope.SESSION` | `on_turn`                                            | Created once per `agent.ask()` turn and shared by all nested tool/LLM/HITL calls in that turn. |
-| `Scope.REQUEST` | `on_tool_execution`, `on_llm_call`, `on_human_input` | Created for each tool execution, LLM call, or HITL request.                                    |
+| Dishka scope    | AG2 lifecycle                                                                           | Description                                                                                                       |
+|-----------------|-----------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------|
+| `Scope.APP`     | Root container                                                                          | Lives for the application/container lifetime.                                                                     |
+| `Scope.SESSION` | `on_turn`                                                                               | Created once per `agent.ask()` turn and shared by all nested tool/LLM/HITL calls in that turn.                    |
+| `Scope.REQUEST` | `on_tool_execution`, `on_llm_call`, `on_human_input`, injected prompt/schema validators | Created for each tool execution, LLM call, HITL request, injected dynamic prompt, or injected response validator. |
 
 ## Supported AG2 Features
 
-| AG2 feature                                     | `Scope.APP`         | `Scope.SESSION` | `Scope.REQUEST` | Notes                                                                                                                                            |
-|-------------------------------------------------|---------------------|-----------------|-----------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| `@agent.tool`                                   | yes                 | yes             | yes             | Main supported path for injected tools.                                                                                                          |
-| standalone `@tool` in `Agent(..., tools=[...])` | yes                 | yes             | yes             | Same lifecycle as `@agent.tool`.                                                                                                                 |
-| `Toolkit` / custom `Tool` execution             | yes                 | yes             | yes             | Works for actual tool functions if the custom tool forwards `middleware` in `register()`.                                                        |
-| `on_llm_call` middleware path                   | yes                 | yes             | yes             | `REQUEST` is opened for every model call.                                                                                                        |
-| HITL hooks (`hitl_hook=` / `@agent.hitl_hook`)  | yes                 | yes             | yes             | `HumanInputRequest` is available in `REQUEST` scope.                                                                                             |
-| `@agent.prompt`                                 | app-only workaround | no              | no              | Dynamic prompts run before middleware is constructed. Use `dependencies={CONTAINER_NAME: container}` for APP-scope dependencies.                 |
-| `response_schema` validators                    | yes                 | no              | no              | Validation runs inside the turn, so APP-scope dependencies resolve automatically. SESSION/REQUEST scopes are already closed.                     |
+| AG2 feature                                     | `Scope.APP` | `Scope.SESSION` | `Scope.REQUEST` | Notes                                                                                                                                                    |
+|-------------------------------------------------|-------------|-----------------|-----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `@agent.tool`                                   | yes         | yes             | yes             | Main supported path for injected tools.                                                                                                                  |
+| standalone `@tool` in `Agent(..., tools=[...])` | yes         | yes             | yes             | Same lifecycle as `@agent.tool`.                                                                                                                         |
+| `Toolkit` / custom `Tool` execution             | yes         | yes             | yes             | Works for actual tool functions if the custom tool forwards `middleware` in `register()`.                                                                |
+| `on_llm_call` middleware path                   | yes         | yes             | yes             | `REQUEST` is opened for every model call.                                                                                                                |
+| HITL hooks (`hitl_hook=` / `@agent.hitl_hook`)  | yes         | yes             | yes             | `HumanInputRequest` is available in `REQUEST` scope.                                                                                                     |
+| `@agent.prompt`                                 | yes         | no              | yes             | Dynamic prompts run before middleware is constructed. Use `dependencies={CONTAINER_NAME: container}` so `@inject` can open `REQUEST` from the container. |
+| `response_schema` validators                    | yes         | no              | yes             | Injected validators can use `REQUEST` dependencies during `reply.content()` validation.                                                                  |
 
 See the examples directory for runnable examples:
 
 * `examples/ag2_agent_tool.py` - `@agent.tool` with APP, SESSION and REQUEST.
 * `examples/ag2_standalone_tool.py` - standalone `@tool` with `tools=[...]`.
 * `examples/ag2_standalone_tool_hitl.py` and `examples/ag2_standalone_tool_hitl_arg.py` - HITL hook injection.
-* `examples/ag2_dynamic_prompt.py` - `@agent.prompt` APP-scope workaround.
-* `examples/ag2_response_schema.py` - `response_schema` behavior and current injection limitation.
+* `examples/ag2_dynamic_prompt.py` - `@agent.prompt` with injected APP/REQUEST dependencies.
+* `examples/ag2_response_schema.py` - `response_schema` validators with injected APP/REQUEST dependencies.
 * `examples/ag2_toolkit.py` - AG2 `Toolkit` with injected tool functions.
 * `examples/ag2_custom_toolset.py` - custom AG2 `Tool`/toolset with injected `schemas()` and injected tool functions.
 
@@ -70,7 +70,9 @@ from dishka_ag2 import (
 from dishka import make_async_container, Provider, Scope, provide
 ```
 
-2. Create provider. You can use `ToolCallEvent` or `HumanInputRequest` as factory parameters on `REQUEST` scope, and `BaseEvent` / `Context` on `SESSION` scope.
+2. Create provider. You can use `ToolCallEvent` or `HumanInputRequest` as factory parameters on `REQUEST` scope for tool/HITL requests, and `BaseEvent` / `Context` on `SESSION` scope.
+
+For `@agent.prompt` and `response_schema` validators, `REQUEST` scope is also supported, but it is opened outside a tool/HITL event. Use request factories that do not require `ToolCallEvent` or `HumanInputRequest` in those paths.
 
 ```python
 from autogen.beta.events import HumanInputRequest, ToolCallEvent
