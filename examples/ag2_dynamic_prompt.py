@@ -32,7 +32,7 @@ class PromptService:
 
 
 class MyProvider(Provider):
-    @provide(scope=Scope.APP)
+    @provide(scope=Scope.REQUEST)
     def prompt_service(self) -> PromptService:
         return PromptService()
 
