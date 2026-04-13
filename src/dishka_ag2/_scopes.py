@@ -5,7 +5,11 @@ from typing import Any
 from autogen.beta.context import Context
 from dishka import AsyncContainer, Container, Scope
 
-from dishka_ag2._consts import CONTAINER_NAME, SESSION_CONTAINER_NAME
+from dishka_ag2._consts import (
+    CONTAINER_NAME,
+    PENDING_REQUEST_CONTEXT,
+    SESSION_CONTAINER_NAME,
+)
 
 
 @asynccontextmanager
@@ -90,3 +94,19 @@ def sync_request_scope(
             yield
         finally:
             context.dependencies[CONTAINER_NAME] = previous_current
+
+
+@contextmanager
+def stash_request_context(
+    context: Context,
+    context_data: dict[type, Any],
+) -> Iterator[None]:
+    previous = context.dependencies.get(PENDING_REQUEST_CONTEXT)
+    context.dependencies[PENDING_REQUEST_CONTEXT] = context_data
+    try:
+        yield
+    finally:
+        if previous is None:
+            context.dependencies.pop(PENDING_REQUEST_CONTEXT, None)
+        else:
+            context.dependencies[PENDING_REQUEST_CONTEXT] = previous

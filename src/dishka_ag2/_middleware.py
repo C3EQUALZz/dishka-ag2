@@ -22,9 +22,8 @@ from typing_extensions import override
 
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._scopes import (
-    async_request_scope,
     async_session_scope,
-    sync_request_scope,
+    stash_request_context,
     sync_session_scope,
 )
 
@@ -62,7 +61,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> ToolResultType:
         context_data = {Context: context, ToolCallEvent: event}
 
-        async with async_request_scope(context, self._container, context_data):
+        with stash_request_context(context, context_data):
             return await call_next(event, context)
 
     @override
@@ -74,7 +73,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> ModelResponse:
         context_data = {Context: context}
 
-        async with async_request_scope(context, self._container, context_data):
+        with stash_request_context(context, context_data):
             return await call_next(events, context)
 
     @override
@@ -86,7 +85,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> HumanMessage:
         context_data = {Context: context, HumanInputRequest: event}
 
-        async with async_request_scope(context, self._container, context_data):
+        with stash_request_context(context, context_data):
             return await call_next(event, context)
 
 
@@ -123,7 +122,7 @@ class DishkaSyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> ToolResultType:
         context_data = {Context: context, ToolCallEvent: event}
 
-        with sync_request_scope(context, self._container, context_data):
+        with stash_request_context(context, context_data):
             return await call_next(event, context)
 
     @override
@@ -135,7 +134,7 @@ class DishkaSyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> ModelResponse:
         context_data = {Context: context}
 
-        with sync_request_scope(context, self._container, context_data):
+        with stash_request_context(context, context_data):
             return await call_next(events, context)
 
     @override
@@ -147,5 +146,5 @@ class DishkaSyncMiddleware(BaseMiddleware):  # type: ignore[misc]
     ) -> HumanMessage:
         context_data = {Context: context, HumanInputRequest: event}
 
-        with sync_request_scope(context, self._container, context_data):
+        with stash_request_context(context, context_data):
             return await call_next(event, context)

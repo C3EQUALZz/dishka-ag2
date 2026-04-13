@@ -16,7 +16,7 @@ from autogen.beta.events import (
 from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._consts import CONTAINER_NAME
+from dishka_ag2._consts import CONTAINER_NAME, PENDING_REQUEST_CONTEXT
 from tests.common import (
     APP_DEP_VALUE,
     REQUEST_DEP_VALUE,
@@ -146,13 +146,13 @@ async def test_request_scope_per_tool_call(
 
 
 @pytest.mark.asyncio()
-async def test_request_container_restored_to_root(
+async def test_tool_execution_stashes_and_clears_pending_context(
     app_provider: AppProvider,
 ) -> None:
     async with create_ag2_env(
         app_provider,
         use_async_container=False,
-    ) as (root, middleware):
+    ) as (_, middleware):
         context = make_context()
         event = make_tool_call()
         instance = middleware(event, context)
@@ -161,11 +161,13 @@ async def test_request_container_restored_to_root(
             ev: ToolCallEvent,
             ctx: Context,
         ) -> ToolResultEvent:
-            assert ctx.dependencies[CONTAINER_NAME] is not root
+            pending = ctx.dependencies[PENDING_REQUEST_CONTEXT]
+            assert pending[Context] is ctx
+            assert pending[ToolCallEvent] is ev
             return ToolResultEvent.from_call(ev, result="ok")
 
         await instance.on_tool_execution(call_next, event, context)
-        assert context.dependencies[CONTAINER_NAME] is root
+        assert PENDING_REQUEST_CONTEXT not in context.dependencies
 
 
 @pytest.mark.asyncio()

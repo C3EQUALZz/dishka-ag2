@@ -67,6 +67,32 @@ async def test_response_schema_injected_app_scope() -> None:
 
 
 @pytest.mark.asyncio()
+async def test_response_schema_injected_request_scope(
+    app_provider: AppProvider,
+) -> None:
+    @response_schema  # type: ignore[untyped-decorator]
+    @inject
+    async def parse_int_request(
+        content: str,
+        request_dep: FromDishka[RequestDep],
+    ) -> int:
+        assert request_dep == REQUEST_DEP_VALUE
+        return int(content.strip())
+
+    async with async_env(app_provider) as (_, middleware):
+        agent = Agent(
+            "assistant",
+            config=TestConfig("77"),
+            response_schema=PromptedSchema(parse_int_request),
+            middleware=[middleware],
+        )
+
+        reply = await agent.ask("Return 77.")
+        assert await reply.content() == 77
+        assert app_provider.request_released.call_count >= 1
+
+
+@pytest.mark.asyncio()
 async def test_response_schema_with_tool_injection(
     app_provider: AppProvider,
 ) -> None:

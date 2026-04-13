@@ -24,7 +24,7 @@ class ParserService:
 
 
 class MyProvider(Provider):
-    @provide(scope=Scope.APP)
+    @provide(scope=Scope.REQUEST)
     def parser_service(self) -> ParserService:
         return ParserService()
 

@@ -13,7 +13,6 @@ from autogen.beta.context import Context
 from autogen.beta.events import (
     BaseEvent,
     ModelResponse,
-    ToolCallEvent,
 )
 
 from dishka_ag2 import FromDishka, inject
@@ -24,7 +23,7 @@ from tests.unit.conftest import create_ag2_env
 
 
 @pytest.mark.asyncio()
-async def test_request_scope_cleanup_on_exception_async(
+async def test_inject_request_cleanup_on_exception_async(
     app_provider: AppProvider,
 ) -> None:
     async with create_ag2_env(
@@ -33,24 +32,22 @@ async def test_request_scope_cleanup_on_exception_async(
     ) as (root, middleware):
         context = make_context()
         event = make_tool_call()
-        instance = middleware(event, context)
+        middleware(event, context)
 
-        async def call_next(
-            ev: ToolCallEvent,
-            ctx: Context,
-        ) -> None:
-            await ctx.dependencies[CONTAINER_NAME].get(RequestDep)
+        @inject
+        async def handle(request_dep: FromDishka[RequestDep]) -> None:
+            _ = request_dep
             raise RuntimeError("boom")
 
         with pytest.raises(RuntimeError, match="boom"):
-            await instance.on_tool_execution(call_next, event, context)
+            await handle(___dishka_context=context)
 
         assert context.dependencies[CONTAINER_NAME] is root
         app_provider.request_released.assert_called_once()
 
 
 @pytest.mark.asyncio()
-async def test_request_scope_cleanup_on_exception_sync(
+async def test_inject_request_cleanup_on_exception_sync(
     app_provider: AppProvider,
 ) -> None:
     async with create_ag2_env(
@@ -59,17 +56,15 @@ async def test_request_scope_cleanup_on_exception_sync(
     ) as (root, middleware):
         context = make_context()
         event = make_tool_call()
-        instance = middleware(event, context)
+        middleware(event, context)
 
-        async def call_next(
-            ev: ToolCallEvent,
-            ctx: Context,
-        ) -> None:
-            ctx.dependencies[CONTAINER_NAME].get(RequestDep)
+        @inject
+        def handle(request_dep: FromDishka[RequestDep]) -> None:
+            _ = request_dep
             raise RuntimeError("boom")
 
         with pytest.raises(RuntimeError, match="boom"):
-            await instance.on_tool_execution(call_next, event, context)
+            handle(___dishka_context=context)
 
         assert context.dependencies[CONTAINER_NAME] is root
         app_provider.request_released.assert_called_once()
