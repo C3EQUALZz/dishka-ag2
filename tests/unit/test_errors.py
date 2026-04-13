@@ -1,5 +1,7 @@
 """Tests for error handling and container type mismatch."""
 
+from typing import TYPE_CHECKING
+
 import pytest
 from autogen.beta.context import Context
 from autogen.beta.events import ToolCallEvent, ToolResultEvent
@@ -9,6 +11,9 @@ from dishka_ag2 import FromDishka, inject
 from tests.common import AppDep, AppProvider
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env
+
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
 
 
 @pytest.mark.asyncio()
@@ -22,10 +27,13 @@ async def test_async_tool_with_sync_container_raises(
 
         @inject
         async def handle(
+            ctx: Context,
             app_dep: FromDishka[AppDep],
         ) -> str:
+            _ = ctx
             return str(app_dep)
 
+        typed_handle: Callable[[Context], Awaitable[str]] = handle
         context = make_context()
         event = make_tool_call()
         instance = middleware(event, context)
@@ -34,9 +42,11 @@ async def test_async_tool_with_sync_container_raises(
             ev: ToolCallEvent,
             ctx: Context,
         ) -> ToolResultEvent:
+            result: str = await typed_handle(ctx)
+
             return ToolResultEvent.from_call(
                 ev,
-                result=await handle(___dishka_context=ctx),
+                result=result,
             )
 
         with pytest.raises(
@@ -61,8 +71,10 @@ async def test_sync_tool_with_async_container_raises(
 
         @inject
         def handle(
+            ctx: Context,
             app_dep: FromDishka[AppDep],
         ) -> str:
+            _ = ctx
             return str(app_dep)
 
         context = make_context()
@@ -75,7 +87,7 @@ async def test_sync_tool_with_async_container_raises(
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(___dishka_context=ctx),
+                result=handle(ctx),
             )
 
         with pytest.raises(
@@ -93,11 +105,14 @@ async def test_sync_tool_with_async_container_raises(
 async def test_missing_middleware_raises() -> None:
     @inject
     async def handle(
+        ctx: Context,
         app_dep: FromDishka[AppDep],
     ) -> str:
+        _ = ctx
         return str(app_dep)
 
+    typed_handle: Callable[[Context], Awaitable[str]] = handle
     context = make_context()
 
     with pytest.raises((DishkaError, KeyError)):
-        await handle(___dishka_context=context)
+        await typed_handle(context)

@@ -49,6 +49,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
         @inject
         def handle(
+            ctx: Context,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -63,7 +64,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(___dishka_context=ctx),
+                result=handle(ctx),
             )
 
         result = await instance.on_tool_execution(call_next, event, context)
@@ -119,6 +120,7 @@ async def test_request_scope_per_tool_call(
 
         @inject
         def handle(
+            ctx: Context,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -136,7 +138,7 @@ async def test_request_scope_per_tool_call(
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,
-                    result=handle(___dishka_context=ctx),
+                    result=handle(ctx),
                 )
 
             await instance.on_tool_execution(call_next, event, context)
@@ -173,13 +175,17 @@ async def test_tool_execution_stashes_and_clears_pending_context(
 @pytest.mark.asyncio()
 async def test_missing_container_raises() -> None:
     @inject
-    def handle(request_dep: FromDishka[RequestDep]) -> str:
+    def handle(
+        ctx: Context,
+        request_dep: FromDishka[RequestDep],
+    ) -> str:
+        _ = ctx
         return str(request_dep)
 
     context = make_context()
 
     with pytest.raises(DishkaError, match="Dishka container not found"):
-        handle(___dishka_context=context)
+        handle(context)
 
 
 # --- APP scope ---
@@ -196,6 +202,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
 
         @inject
         def handle(
+            ctx: Context,
             app_dep: FromDishka[AppDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -210,7 +217,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(___dishka_context=ctx),
+                result=handle(ctx),
             )
 
         await instance.on_tool_execution(call_next, event, context)
@@ -231,7 +238,11 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
     ) as (_, middleware):
 
         @inject
-        def handle(app_mock: FromDishka[AppMock]) -> str:
+        def handle(
+            ctx: Context,
+            app_mock: FromDishka[AppMock],
+        ) -> str:
+            _ = ctx
             app_mocks.append(app_mock)
             return "ok"
 
@@ -246,7 +257,7 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,
-                    result=handle(___dishka_context=ctx),
+                    result=handle(ctx),
                 )
 
             await instance.on_tool_execution(call_next, event, context)
@@ -270,7 +281,11 @@ async def test_session_scope_via_on_turn(
         event = make_tool_call()
 
         @inject
-        def handle(session_dep: FromDishka[SessionDep]) -> str:
+        def handle(
+            ctx: Context,
+            session_dep: FromDishka[SessionDep],
+        ) -> str:
+            _ = ctx
             return str(session_dep)
 
         instance = middleware(event, context)
@@ -279,7 +294,7 @@ async def test_session_scope_via_on_turn(
             ev: BaseEvent,
             ctx: Context,
         ) -> ModelResponse:
-            result = handle(___dishka_context=ctx)
+            result = handle(ctx)
             assert result == str(SESSION_DEP_VALUE)
             return ModelResponse(message=result)
 
@@ -302,6 +317,7 @@ async def test_session_shared_across_tool_calls(
 
         @inject
         def handle(
+            ctx: Context,
             session_dep: FromDishka[SessionDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:
@@ -323,7 +339,7 @@ async def test_session_shared_across_tool_calls(
                 ) -> ToolResultEvent:
                     return ToolResultEvent.from_call(
                         tool_ev,
-                        result=handle(___dishka_context=tool_ctx),
+                        result=handle(tool_ctx),
                     )
 
                 await instance.on_tool_execution(
@@ -381,6 +397,7 @@ async def test_llm_call_request_dependency(
 
         @inject
         def handle(
+            ctx: Context,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -393,7 +410,7 @@ async def test_llm_call_request_dependency(
             evs: Sequence[BaseEvent],
             ctx: Context,
         ) -> ModelResponse:
-            result = handle(___dishka_context=ctx)
+            result = handle(ctx)
             return ModelResponse(message=result)
 
         result = await instance.on_llm_call(call_next, events, context)
@@ -416,6 +433,7 @@ async def test_llm_call_uses_session_container(
 
         @inject
         def handle(
+            ctx: Context,
             session_dep: FromDishka[SessionDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:
@@ -434,7 +452,7 @@ async def test_llm_call_uses_session_container(
                 evs: Sequence[BaseEvent],
                 llm_ctx: Context,
             ) -> ModelResponse:
-                handle(___dishka_context=llm_ctx)
+                handle(llm_ctx)
                 return ModelResponse(message="ok")
 
             await instance.on_llm_call(llm_call_next, events, ctx)
@@ -447,7 +465,7 @@ async def test_llm_call_uses_session_container(
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     tool_ev,
-                    result=handle(___dishka_context=tool_ctx),
+                    result=handle(tool_ctx),
                 )
 
             await instance.on_tool_execution(
@@ -482,6 +500,7 @@ async def test_human_input_request_dependency(
 
         @inject
         def handle(
+            ctx: Context,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -494,7 +513,7 @@ async def test_human_input_request_dependency(
             ev: HumanInputRequest,
             ctx: Context,
         ) -> HumanMessage:
-            handle(___dishka_context=ctx)
+            handle(ctx)
             return HumanMessage(content="yes")
 
         result = await instance.on_human_input(
@@ -520,8 +539,10 @@ async def test_human_input_provides_event(
 
         @inject
         def handle(
+            ctx: Context,
             hi_request: FromDishka[HumanInputRequest],
         ) -> str:
+            _ = ctx
             return str(hi_request.content)
 
         instance = middleware(event, context)
@@ -530,7 +551,7 @@ async def test_human_input_provides_event(
             ev: HumanInputRequest,
             ctx: Context,
         ) -> HumanMessage:
-            content: str = handle(___dishka_context=ctx)
+            content: str = handle(ctx)
             return HumanMessage(content=content)
 
         result = await instance.on_human_input(
@@ -556,6 +577,7 @@ async def test_human_input_uses_session_container(
 
         @inject
         def handle(
+            ctx: Context,
             session_dep: FromDishka[SessionDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:
@@ -574,7 +596,7 @@ async def test_human_input_uses_session_container(
                 hi_ev: HumanInputRequest,
                 hi_ctx: Context,
             ) -> HumanMessage:
-                handle(___dishka_context=hi_ctx)
+                handle(hi_ctx)
                 return HumanMessage(content="ok")
 
             await instance.on_human_input(
@@ -591,7 +613,7 @@ async def test_human_input_uses_session_container(
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     tool_ev,
-                    result=handle(___dishka_context=tool_ctx),
+                    result=handle(tool_ctx),
                 )
 
             await instance.on_tool_execution(

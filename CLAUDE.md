@@ -7,7 +7,8 @@ Integration of [Dishka](https://github.com/reagento/dishka) DI framework with [A
 ```
 src/dishka_ag2/
   _consts.py      # Constants: container keys, hidden Context parameter, CurrentContainer alias
-  _container.py   # Container getters from AG2 Context
+  _container.py   # Container getters from AG2 Context + walk_to_root
+  _context.py     # build_context_getter: resolves Context param from func signature
   _injectors.py   # inject() decorator using wrap_injection + fast_depends
   _middleware.py   # DishkaMiddleware: on_turn (SESSION) + on_tool_execution (REQUEST)
   autogen.py      # AG2Provider, public re-exports

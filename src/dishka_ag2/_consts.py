@@ -1,5 +1,5 @@
 from inspect import Parameter
-from typing import Final, TypeAlias
+from typing import Final, ParamSpec, TypeAlias, TypeVar
 
 from autogen.beta.annotations import Context
 from dishka import AsyncContainer, Container
@@ -15,3 +15,7 @@ CONTEXT_PARAM: Final[Parameter] = Parameter(
     annotation=Context,
     kind=Parameter.KEYWORD_ONLY,
 )
+
+ReturnT = TypeVar("ReturnT")
+ParamsP = ParamSpec("ParamsP")
+ContainerT = TypeVar("ContainerT", AsyncContainer, Container)

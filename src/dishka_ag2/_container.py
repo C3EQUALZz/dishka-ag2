@@ -1,8 +1,8 @@
 from autogen.beta.context import Context
-from dishka import AsyncContainer, Container
+from dishka import AsyncContainer, Container, Scope
 from dishka.exception_base import DishkaError
 
-from dishka_ag2._consts import CONTAINER_NAME, CurrentContainer
+from dishka_ag2._consts import CONTAINER_NAME, ContainerT, CurrentContainer
 
 
 def _get_container_from_context(context: Context) -> CurrentContainer:
@@ -35,3 +35,10 @@ def get_sync_container_from_context(context: Context) -> Container:
         )
         raise DishkaError(msg)
     return container
+
+
+def walk_to_root(container: ContainerT) -> ContainerT:
+    current = container
+    while current.scope != Scope.APP and current.parent_container is not None:
+        current = current.parent_container
+    return current

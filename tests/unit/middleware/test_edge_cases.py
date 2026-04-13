@@ -6,6 +6,7 @@ Covers:
 - BaseEvent injection at SESSION scope.
 """
 
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
@@ -21,6 +22,9 @@ from tests.common import AppProvider, RequestDep, SessionDep
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env
 
+if TYPE_CHECKING:
+    from collections.abc import Awaitable, Callable
+
 
 @pytest.mark.asyncio()
 async def test_inject_request_cleanup_on_exception_async(
@@ -35,12 +39,17 @@ async def test_inject_request_cleanup_on_exception_async(
         middleware(event, context)
 
         @inject
-        async def handle(request_dep: FromDishka[RequestDep]) -> None:
-            _ = request_dep
+        async def handle(
+            ctx: Context,
+            request_dep: FromDishka[RequestDep],
+        ) -> None:
+            _ = (ctx, request_dep)
             raise RuntimeError("boom")
 
+        typed_handle: Callable[[Context], Awaitable[None]] = handle
+
         with pytest.raises(RuntimeError, match="boom"):
-            await handle(___dishka_context=context)
+            await typed_handle(context)
 
         assert context.dependencies[CONTAINER_NAME] is root
         app_provider.request_released.assert_called_once()
@@ -59,12 +68,15 @@ async def test_inject_request_cleanup_on_exception_sync(
         middleware(event, context)
 
         @inject
-        def handle(request_dep: FromDishka[RequestDep]) -> None:
-            _ = request_dep
+        def handle(
+            ctx: Context,
+            request_dep: FromDishka[RequestDep],
+        ) -> None:
+            _ = (ctx, request_dep)
             raise RuntimeError("boom")
 
         with pytest.raises(RuntimeError, match="boom"):
-            handle(___dishka_context=context)
+            handle(context)
 
         assert context.dependencies[CONTAINER_NAME] is root
         app_provider.request_released.assert_called_once()
@@ -178,16 +190,20 @@ async def test_base_event_injected_at_session_async(
 
         @inject
         async def handle(
+            ctx: Context,
             turn_event: FromDishka[BaseEvent],
         ) -> str:
+            _ = ctx
             captured.append(turn_event)
             return "ok"
+
+        typed_handle: Callable[[Context], Awaitable[str]] = handle
 
         async def turn_body(
             ev: BaseEvent,
             ctx: Context,
         ) -> ModelResponse:
-            result: str = await handle(___dishka_context=ctx)  # type: ignore[no-untyped-call]
+            result: str = await typed_handle(ctx)
             return ModelResponse(message=result)
 
         await instance.on_turn(turn_body, event, context)
@@ -212,8 +228,10 @@ async def test_base_event_injected_at_session_sync(
 
         @inject
         def handle(
+            ctx: Context,
             turn_event: FromDishka[BaseEvent],
         ) -> str:
+            _ = ctx
             captured.append(turn_event)
             return "ok"
 
@@ -221,7 +239,7 @@ async def test_base_event_injected_at_session_sync(
             ev: BaseEvent,
             ctx: Context,
         ) -> ModelResponse:
-            result: str = handle(___dishka_context=ctx)
+            result = handle(ctx)
             return ModelResponse(message=result)
 
         await instance.on_turn(turn_body, event, context)
