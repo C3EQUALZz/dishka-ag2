@@ -70,3 +70,8 @@ test = [
 
 [tool.bandit]
 skips = ["B101"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning:autogen\\..*",
+]
