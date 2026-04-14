@@ -1,67 +1,23 @@
-"""AG2 Toolkit with injected tools, async container.
-
-Mirrors examples/ag2_toolkit.py.
-"""
+"""Toolkit.tool decorator with async Dishka middleware."""
 
 from typing import TYPE_CHECKING
-from unittest.mock import Mock
 
 import pytest
 from autogen.beta import Agent
 from autogen.beta.events import ToolCallEvent
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import Toolkit
-from dishka import Provider, provide
 
-from dishka_ag2 import AG2Scope, FromDishka, inject
+from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import async_env
-from tests.integration.scope_state import SessionState, ToolRequestState
+from tests.integration.toolkit.common import ToolkitProvider, WeatherService
 
 if TYPE_CHECKING:
     from uuid import UUID
 
 
-class WeatherService:
-    def __init__(
-        self,
-        session: SessionState,
-        request: ToolRequestState,
-    ) -> None:
-        self.session = session
-        self.request = request
-
-    async def forecast(self, city: str) -> str:
-        return f"{city}:sunny tool={self.request.tool_name}"
-
-
-class ToolkitProvider(Provider):
-    def __init__(self) -> None:
-        super().__init__()
-        self.mock = Mock()
-
-    @provide(scope=AG2Scope.APP)
-    def get_mock(self) -> Mock:
-        return self.mock
-
-    @provide(scope=AG2Scope.SESSION)
-    def session_state(self) -> SessionState:
-        return SessionState()
-
-    @provide(scope=AG2Scope.REQUEST)
-    def tool_request_state(self, event: ToolCallEvent) -> ToolRequestState:
-        return ToolRequestState(tool_name=event.name)
-
-    @provide(scope=AG2Scope.REQUEST)
-    def weather_service(
-        self,
-        session: SessionState,
-        request: ToolRequestState,
-    ) -> WeatherService:
-        return WeatherService(session=session, request=request)
-
-
 @pytest.mark.asyncio()
-async def test_toolkit_injects_request_deps() -> None:
+async def test_toolkit_decorator_injects_request_deps() -> None:
     provider = ToolkitProvider()
     sessions: list[UUID] = []
     tool_names: list[str] = []
@@ -76,7 +32,7 @@ async def test_toolkit_injects_request_deps() -> None:
     ) -> str:
         sessions.append(weather.session.session_id)
         tool_names.append(weather.request.tool_name)
-        return await weather.forecast(city)
+        return weather.forecast(city)
 
     async with async_env(provider) as (_, middleware):
         agent = Agent(
