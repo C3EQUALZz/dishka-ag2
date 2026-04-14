@@ -41,7 +41,6 @@ See the examples directory for runnable examples:
 * `examples/ag2_response_schema.py` - `response_schema` validators with injected APP/REQUEST dependencies.
 * `examples/ag2_subagents.py` - parent and child agents sharing one explicit `AG2Scope.CONVERSATION`.
 * `examples/ag2_toolkit.py` - AG2 `Toolkit` with injected tool functions.
-* `examples/ag2_custom_toolset.py` - custom AG2 `Tool`/toolset with injected `schemas()` and injected tool functions.
 
 ## Installation
 
@@ -149,6 +148,267 @@ async def main() -> None:
     finally:
         await container.close()
 ```
+
+## Dynamic prompts
+
+AG2 evaluates dynamic prompts before the middleware starts the turn. If the
+prompt function is injected, pass the current container through AG2
+dependencies so `@inject` can open `AG2Scope.REQUEST` for the prompt call.
+
+Both registration styles are supported:
+
+* `@agent.prompt` decorator
+* `Agent(..., prompt=dynamic_prompt)` constructor argument
+
+```python
+from autogen.beta import Agent, Context
+from autogen.beta.middleware import Middleware
+from dishka import Provider, make_async_container, provide
+
+from dishka_ag2 import (
+    AG2Provider,
+    AG2Scope,
+    CONTAINER_NAME,
+    DishkaAsyncMiddleware,
+    FromDishka,
+    inject,
+)
+
+
+class PromptService:
+    def build(self, context: Context) -> str:
+        return f"vars={context.variables}"
+
+
+class PromptProvider(Provider):
+    @provide(scope=AG2Scope.REQUEST)
+    def prompt_service(self) -> PromptService:
+        return PromptService()
+
+
+container = make_async_container(
+    PromptProvider(),
+    AG2Provider(),
+    scopes=AG2Scope,
+)
+
+agent = Agent(
+    "assistant",
+    # Required for injected dynamic prompts. Middleware is not active yet
+    # while AG2 builds the prompt.
+    dependencies={CONTAINER_NAME: container},
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+
+
+@agent.prompt
+@inject
+async def dynamic_prompt(
+    ctx: Context,
+    service: FromDishka[PromptService],
+) -> str:
+    return service.build(ctx)
+```
+
+The constructor form is the same dependency-wise:
+
+```python
+@inject
+async def dynamic_prompt(
+    ctx: Context,
+    service: FromDishka[PromptService],
+) -> str:
+    return service.build(ctx)
+
+
+agent = Agent(
+    "assistant",
+    prompt=dynamic_prompt,
+    dependencies={CONTAINER_NAME: container},
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+Use request providers that match the prompt path. `Context` is available, but
+there is no `ToolCallEvent` while a dynamic prompt is being built.
+
+## Response Schemas
+
+Injected response validators can use `AG2Scope.APP` and `AG2Scope.REQUEST`.
+They run when AG2 validates the response content, so `@inject` opens a request
+scope around the validator call.
+
+```python
+from autogen.beta import Agent, PromptedSchema, response_schema
+
+
+class ParserService:
+    def parse_int(self, content: str) -> int:
+        return int(content.strip())
+
+
+class SchemaProvider(Provider):
+    @provide(scope=AG2Scope.REQUEST)
+    def parser(self) -> ParserService:
+        return ParserService()
+
+
+@response_schema
+@inject
+async def parse_int(
+    content: str,
+    parser: FromDishka[ParserService],
+) -> int:
+    return parser.parse_int(content)
+
+
+agent = Agent(
+    "assistant",
+    response_schema=PromptedSchema(parse_int),
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+You can also pass a plain AG2 `ResponseSchema`/`PromptedSchema` through
+`Agent(..., response_schema=...)` and still use Dishka in tools executed before
+the final response.
+
+## HITL Hooks
+
+HITL hooks are request-scoped. `HumanInputRequest` is available as a provider
+dependency in `AG2Scope.REQUEST`.
+
+Both registration styles are supported:
+
+* `@agent.hitl_hook`
+* `Agent(..., hitl_hook=on_human_input)`
+
+```python
+from autogen.beta.events import HumanInputRequest, HumanMessage
+
+
+class AuditProvider(Provider):
+    @provide(scope=AG2Scope.REQUEST)
+    def audit_log(self, event: HumanInputRequest) -> AuditLog:
+        return AuditLog(f"Human was asked: {event.content}")
+
+
+@inject
+async def on_human_input(
+    event: HumanInputRequest,
+    audit: FromDishka[AuditLog],
+) -> HumanMessage:
+    return HumanMessage(content="confirmed")
+
+
+agent = Agent(
+    "assistant",
+    hitl_hook=on_human_input,
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+For decorator registration:
+
+```python
+@agent.hitl_hook
+@inject
+async def on_human_input(
+    event: HumanInputRequest,
+    audit: FromDishka[AuditLog],
+) -> HumanMessage:
+    return HumanMessage(content="confirmed")
+```
+
+## Toolkits
+
+AG2 `Toolkit` works with injected tool functions. You can register functions
+with the decorator or pass them into `Toolkit(...)`.
+
+```python
+from autogen.beta.tools import Toolkit
+
+
+toolkit = Toolkit()
+
+
+@toolkit.tool
+@inject
+async def get_weather(
+    city: str,
+    weather: FromDishka[WeatherService],
+) -> str:
+    return await weather.forecast(city)
+
+
+agent = Agent(
+    "assistant",
+    tools=[toolkit],
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+Constructor registration:
+
+```python
+@inject
+async def get_weather(
+    city: str,
+    weather: FromDishka[WeatherService],
+) -> str:
+    return await weather.forecast(city)
+
+
+toolkit = Toolkit(get_weather)
+```
+
+## Conversation Scope and Subagents
+
+Use `AG2Scope.CONVERSATION` when several `Agent.ask()` calls must share state
+that is broader than one turn, but should not live for the whole app. This is
+useful for parent/child agents, subagents, or a multi-step conversation.
+
+The container chain is:
+
+```text
+APP -> CONVERSATION -> SESSION -> REQUEST
+```
+
+`CONVERSATION` is opened explicitly with the regular Dishka API:
+
+```python
+async with container(scope=AG2Scope.CONVERSATION) as conversation:
+    reply = await parent_agent.ask(
+        "Ask the child agent.",
+        dependencies={CONTAINER_NAME: conversation},
+    )
+```
+
+Inside a tool you can inject `ConversationAsyncContainer` and forward it to a
+nested `Agent.ask()` call. This keeps the same conversation state for parent
+and child, while each `Agent.ask()` still gets its own `SESSION`, and every tool
+call still gets its own `REQUEST`.
+
+```python
+@parent_agent.tool
+@inject
+async def ask_child(
+    question: str,
+    conversation_container: FromDishka[ConversationAsyncContainer],
+    conversation: FromDishka[ConversationTrace],
+    session: FromDishka[SessionTrace],
+    request: FromDishka[RequestTrace],
+) -> str:
+    reply = await child_agent.ask(
+        question,
+        dependencies={CONTAINER_NAME: conversation_container},
+    )
+    return str(reply.body)
+```
+
+`ConversationAsyncContainer` and `ConversationContainer` are request-scoped
+handles to the currently open conversation container. They do not replace
+`AG2Scope.APP`: app dependencies remain available through the parent chain.
 
 ## AG2 integration types
 
