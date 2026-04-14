@@ -3,9 +3,8 @@
 Mirrors examples/ag2_toolkit.py.
 """
 
-from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 from unittest.mock import Mock
-from uuid import UUID, uuid4
 
 import pytest
 from autogen.beta import Agent
@@ -16,17 +15,10 @@ from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope, FromDishka, inject
 from tests.integration.conftest import async_env
+from tests.integration.scope_state import SessionState, ToolRequestState
 
-
-@dataclass(frozen=True)
-class SessionState:
-    session_id: UUID = field(default_factory=uuid4)
-
-
-@dataclass(frozen=True)
-class ToolRequestState:
-    tool_name: str
-    request_id: UUID = field(default_factory=uuid4)
+if TYPE_CHECKING:
+    from uuid import UUID
 
 
 class WeatherService:

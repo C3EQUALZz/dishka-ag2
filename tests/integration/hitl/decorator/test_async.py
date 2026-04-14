@@ -1,7 +1,4 @@
-"""@agent.hitl_hook with Dishka DI (decorator form).
-
-Mirrors examples/ag2_standalone_tool_hitl.py.
-"""
+"""@agent.hitl_hook with async Dishka middleware."""
 
 from unittest.mock import Mock
 
@@ -11,26 +8,14 @@ from autogen.beta.annotations import Context
 from autogen.beta.events import HumanInputRequest, HumanMessage, ToolCallEvent
 from autogen.beta.testing import TestConfig
 from autogen.beta.tools import tool
-from dishka import provide
 
-from dishka_ag2 import AG2Scope, FromDishka, inject
+from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import async_env
-from tests.integration.hitl.conftest import AuditLog, BaseHitlProvider
-
-
-class ConfirmationService:
-    def __init__(self, tool_name: str) -> None:
-        self.tool_name = tool_name
-        self.confirmed = False
-
-
-class HitlProvider(BaseHitlProvider):
-    @provide(scope=AG2Scope.REQUEST)
-    def confirmation(
-        self,
-        event: ToolCallEvent,
-    ) -> ConfirmationService:
-        return ConfirmationService(tool_name=event.name)
+from tests.integration.hitl.common import (
+    AuditLog,
+    ConfirmationService,
+    HitlProvider,
+)
 
 
 @pytest.mark.asyncio()

@@ -1,7 +1,4 @@
-"""hitl_hook= argument form with Dishka DI.
-
-Mirrors examples/ag2_standalone_tool_hitl_arg.py.
-"""
+"""hitl_hook= argument form with async Dishka middleware."""
 
 from unittest.mock import Mock
 
@@ -12,7 +9,7 @@ from autogen.beta.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import async_env
-from tests.integration.hitl.conftest import (
+from tests.integration.hitl.common import (
     AuditLog,
     BaseHitlProvider,
     ask_human,

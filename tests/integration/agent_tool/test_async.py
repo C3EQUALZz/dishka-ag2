@@ -26,17 +26,12 @@ from tests.common import (
     SessionDep,
 )
 from tests.integration.conftest import async_env
+from tests.integration.scope_state import ToolRequestState
 
 
 @dataclass(frozen=True)
 class ConversationState:
     conversation_id: UUID = field(default_factory=uuid4)
-
-
-@dataclass(frozen=True)
-class ToolRequestState:
-    tool_name: str
-    request_id: UUID = field(default_factory=uuid4)
 
 
 Greeting = NewType("Greeting", str)

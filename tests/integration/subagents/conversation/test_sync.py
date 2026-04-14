@@ -1,14 +1,9 @@
 """CONVERSATION scope handle injection with sync Dishka container."""
 
-from collections.abc import Iterable
-from dataclasses import dataclass, field
-from uuid import UUID, uuid4
-
 import pytest
 from autogen.beta import Agent
 from autogen.beta.events import ToolCallEvent
 from autogen.beta.testing import TestConfig
-from dishka import Provider, provide
 
 from dishka_ag2 import (
     CONTAINER_NAME,
@@ -18,23 +13,10 @@ from dishka_ag2 import (
     inject,
 )
 from tests.integration.conftest import sync_env
-
-
-@dataclass(frozen=True)
-class ConversationTrace:
-    conversation_id: UUID = field(default_factory=uuid4)
-
-
-class ConversationProvider(Provider):
-    def __init__(self) -> None:
-        super().__init__()
-        self.conversations: list[UUID] = []
-
-    @provide(scope=AG2Scope.CONVERSATION)
-    def conversation_trace(self) -> Iterable[ConversationTrace]:
-        trace = ConversationTrace()
-        self.conversations.append(trace.conversation_id)
-        yield trace
+from tests.integration.subagents.conversation.common import (
+    ConversationProvider,
+    ConversationTrace,
+)
 
 
 @pytest.mark.asyncio()

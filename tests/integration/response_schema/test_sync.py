@@ -1,8 +1,4 @@
-"""response_schema with Dishka middleware.
-
-Mirrors examples/ag2_response_schema.py — plain validator and injected
-validator with APP-scope dependency.
-"""
+"""response_schema with sync Dishka middleware."""
 
 import pytest
 from autogen.beta import Agent, PromptedSchema, ResponseSchema, response_schema
@@ -11,17 +7,17 @@ from autogen.beta.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.common import APP_DEP_VALUE, REQUEST_DEP_VALUE, AppDep, AppProvider, RequestDep
-from tests.integration.conftest import async_env
+from tests.integration.conftest import sync_env
 from tests.integration.response_schema.common import ParserService, SchemaProvider
 
 
 @pytest.mark.asyncio()
-async def test_response_schema_plain() -> None:
+async def test_response_schema_plain_sync() -> None:
     @response_schema  # type: ignore[untyped-decorator]
     def parse_int(content: str) -> int:
         return int(content.strip())
 
-    async with async_env(SchemaProvider()) as (_, middleware):
+    async with sync_env(SchemaProvider()) as (_, middleware):
         agent = Agent(
             "assistant",
             config=TestConfig("42"),
@@ -34,16 +30,16 @@ async def test_response_schema_plain() -> None:
 
 
 @pytest.mark.asyncio()
-async def test_response_schema_injected_app_scope() -> None:
+async def test_response_schema_injected_app_scope_sync() -> None:
     @response_schema  # type: ignore[untyped-decorator]
     @inject
-    async def parse_int_injected(
+    def parse_int_injected(
         content: str,
         parser: FromDishka[ParserService],
     ) -> int:
         return parser.parse_int(content)
 
-    async with async_env(SchemaProvider()) as (_, middleware):
+    async with sync_env(SchemaProvider()) as (_, middleware):
         agent = Agent(
             "assistant",
             config=TestConfig("43"),
@@ -56,19 +52,19 @@ async def test_response_schema_injected_app_scope() -> None:
 
 
 @pytest.mark.asyncio()
-async def test_response_schema_injected_request_scope(
+async def test_response_schema_injected_request_scope_sync(
     app_provider: AppProvider,
 ) -> None:
     @response_schema  # type: ignore[untyped-decorator]
     @inject
-    async def parse_int_request(
+    def parse_int_request(
         content: str,
         request_dep: FromDishka[RequestDep],
     ) -> int:
         assert request_dep == REQUEST_DEP_VALUE
         return int(content.strip())
 
-    async with async_env(app_provider) as (_, middleware):
+    async with sync_env(app_provider) as (_, middleware):
         agent = Agent(
             "assistant",
             config=TestConfig("77"),
@@ -82,7 +78,7 @@ async def test_response_schema_injected_request_scope(
 
 
 @pytest.mark.asyncio()
-async def test_response_schema_with_tool_injection(
+async def test_response_schema_with_tool_injection_sync(
     app_provider: AppProvider,
 ) -> None:
     ocean_count = ResponseSchema(
@@ -91,7 +87,7 @@ async def test_response_schema_with_tool_injection(
         description="Number of oceans on Earth.",
     )
 
-    async with async_env(app_provider) as (_, middleware):
+    async with sync_env(app_provider) as (_, middleware):
         agent = Agent(
             "assistant",
             config=TestConfig(
@@ -104,7 +100,7 @@ async def test_response_schema_with_tool_injection(
 
         @agent.tool  # type: ignore[untyped-decorator]
         @inject
-        async def check(
+        def check(
             app_dep: FromDishka[AppDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:

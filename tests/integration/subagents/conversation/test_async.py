@@ -1,15 +1,9 @@
 """Nested Agent.ask() calls with shared CONVERSATION scope."""
 
-from collections.abc import Iterable
-from dataclasses import dataclass, field
-from uuid import UUID, uuid4
-
 import pytest
 from autogen.beta import Agent
-from autogen.beta.annotations import Context
 from autogen.beta.events import ToolCallEvent
 from autogen.beta.testing import TestConfig
-from dishka import Provider, provide
 
 from dishka_ag2 import (
     CONTAINER_NAME,
@@ -19,76 +13,13 @@ from dishka_ag2 import (
     inject,
 )
 from tests.integration.conftest import async_env
-
-
-@dataclass(frozen=True)
-class ConversationTrace:
-    conversation_id: UUID = field(default_factory=uuid4)
-
-
-@dataclass(frozen=True)
-class ConversationSessionTrace:
-    agent_name: str
-    conversation_id: UUID
-    session_id: UUID = field(default_factory=uuid4)
-
-
-@dataclass(frozen=True)
-class ConversationRequestTrace:
-    agent_name: str
-    tool_name: str
-    conversation_id: UUID
-    session_id: UUID
-    request_id: UUID = field(default_factory=uuid4)
-
-
-class ConversationSubagentProvider(Provider):
-    def __init__(self) -> None:
-        super().__init__()
-        self.events: list[str] = []
-        self.conversations: list[UUID] = []
-        self.sessions: dict[str, list[ConversationSessionTrace]] = {}
-        self.requests: dict[str, list[ConversationRequestTrace]] = {}
-
-    @provide(scope=AG2Scope.CONVERSATION)
-    def conversation_trace(self) -> Iterable[ConversationTrace]:
-        trace = ConversationTrace()
-        self.conversations.append(trace.conversation_id)
-        self.events.append("conversation:create")
-        yield trace
-        self.events.append("conversation:release")
-
-    @provide(scope=AG2Scope.SESSION)
-    def session_trace(
-        self,
-        context: Context,
-        conversation: ConversationTrace,
-    ) -> Iterable[ConversationSessionTrace]:
-        trace = ConversationSessionTrace(
-            agent_name=str(context.variables["agent_name"]),
-            conversation_id=conversation.conversation_id,
-        )
-        self.sessions.setdefault(trace.agent_name, []).append(trace)
-        self.events.append(f"session:create:{trace.agent_name}")
-        yield trace
-        self.events.append(f"session:release:{trace.agent_name}")
-
-    @provide(scope=AG2Scope.REQUEST)
-    def request_trace(
-        self,
-        event: ToolCallEvent,
-        session: ConversationSessionTrace,
-    ) -> Iterable[ConversationRequestTrace]:
-        trace = ConversationRequestTrace(
-            agent_name=session.agent_name,
-            tool_name=event.name,
-            conversation_id=session.conversation_id,
-            session_id=session.session_id,
-        )
-        self.requests.setdefault(trace.agent_name, []).append(trace)
-        self.events.append(f"request:create:{trace.agent_name}:{trace.tool_name}")
-        yield trace
-        self.events.append(f"request:release:{trace.agent_name}:{trace.tool_name}")
+from tests.integration.subagents.common import AppTrace
+from tests.integration.subagents.conversation.common import (
+    ConversationRequestTrace,
+    ConversationSessionTrace,
+    ConversationSubagentProvider,
+    ConversationTrace,
+)
 
 
 @pytest.mark.asyncio()
@@ -126,10 +57,12 @@ async def test_nested_agent_ask_can_share_explicit_conversation_scope() -> None:
         @inject
         async def child_lookup(
             topic: str,
+            app: FromDishka[AppTrace],
             conversation: FromDishka[ConversationTrace],
             session: FromDishka[ConversationSessionTrace],
             request: FromDishka[ConversationRequestTrace],
         ) -> str:
+            provider.app_ids.append(app.app_id)
             provider.events.append(
                 "tool:child:"
                 f"{conversation.conversation_id}:"
@@ -177,6 +110,7 @@ async def test_nested_agent_ask_can_share_explicit_conversation_scope() -> None:
     child_request = provider.requests["child"][0]
     conversation_id = provider.conversations[0]
 
+    assert provider.app_ids == [provider._app.app_id]  # noqa: SLF001
     assert provider.conversations == [conversation_id]
     assert parent_session.conversation_id == conversation_id
     assert child_session.conversation_id == conversation_id

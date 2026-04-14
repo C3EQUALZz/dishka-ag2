@@ -4,10 +4,8 @@ Mirrors examples/ag2_standalone_tool.py — REQUEST-scope per LLM call and
 SESSION-scope shared across the turn.
 """
 
-from dataclasses import dataclass, field
-from typing import NewType
+from typing import TYPE_CHECKING, NewType
 from unittest.mock import Mock
-from uuid import UUID, uuid4
 
 import pytest
 from autogen.beta import Agent
@@ -18,12 +16,10 @@ from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope, FromDishka, inject
 from tests.integration.conftest import async_env
+from tests.integration.scope_state import SessionState
 
-
-@dataclass(frozen=True)
-class SessionTracker:
-    session_id: UUID = field(default_factory=uuid4)
-
+if TYPE_CHECKING:
+    from uuid import UUID
 
 LLMCounter = NewType("LLMCounter", int)
 
@@ -39,8 +35,8 @@ class StandaloneProvider(Provider):
         return self.mock
 
     @provide(scope=AG2Scope.SESSION)
-    def session_tracker(self) -> SessionTracker:
-        return SessionTracker()
+    def session_tracker(self) -> SessionState:
+        return SessionState()
 
     @provide(scope=AG2Scope.REQUEST)
     def counter(self) -> LLMCounter:
@@ -58,7 +54,7 @@ async def test_standalone_tool_injects_session_and_request() -> None:
     @inject
     async def greet(
         name: str,
-        session: FromDishka[SessionTracker],
+        session: FromDishka[SessionState],
         counter: FromDishka[LLMCounter],
     ) -> str:
         sessions.append(session.session_id)
