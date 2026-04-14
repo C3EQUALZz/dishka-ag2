@@ -1,8 +1,4 @@
-"""@agent.prompt with APP- and REQUEST-scope DI.
-
-Mirrors examples/ag2_dynamic_prompt.py. Dynamic prompts run before middleware
-is constructed, so the user must pass the container via `dependencies=`.
-"""
+"""Agent(..., prompt=...) with async Dishka middleware."""
 
 import pytest
 from autogen.beta import Agent
@@ -20,21 +16,10 @@ from tests.integration.dynamic_prompt.common import (
 
 
 @pytest.mark.asyncio()
-async def test_agent_prompt_uses_app_scope_via_dependencies() -> None:
+async def test_init_prompt_uses_app_scope_via_dependencies() -> None:
     async with async_env(PromptProvider()) as (container, middleware):
-        agent = Agent(
-            "assistant",
-            config=TestConfig(
-                ToolCallEvent(name="noop", arguments="{}"),
-                "Done.",
-            ),
-            dependencies={CONTAINER_NAME: container},
-            middleware=[middleware],
-        )
-
         prompts: list[str] = []
 
-        @agent.prompt  # type: ignore[untyped-decorator]
         @inject
         async def dynamic_prompt(
             ctx: Context,
@@ -43,6 +28,17 @@ async def test_agent_prompt_uses_app_scope_via_dependencies() -> None:
             built = service.build(ctx)
             prompts.append(built)
             return built
+
+        agent = Agent(
+            "assistant",
+            prompt=dynamic_prompt,
+            config=TestConfig(
+                ToolCallEvent(name="noop", arguments="{}"),
+                "Done.",
+            ),
+            dependencies={CONTAINER_NAME: container},
+            middleware=[middleware],
+        )
 
         @agent.tool  # type: ignore[untyped-decorator]
         async def noop() -> str:
@@ -55,21 +51,10 @@ async def test_agent_prompt_uses_app_scope_via_dependencies() -> None:
 
 
 @pytest.mark.asyncio()
-async def test_agent_prompt_uses_request_scope_via_dependencies() -> None:
+async def test_init_prompt_uses_request_scope_via_dependencies() -> None:
     async with async_env(PromptProvider()) as (container, middleware):
-        agent = Agent(
-            "assistant",
-            config=TestConfig(
-                ToolCallEvent(name="noop", arguments="{}"),
-                "Done.",
-            ),
-            dependencies={CONTAINER_NAME: container},
-            middleware=[middleware],
-        )
-
         prompts: list[str] = []
 
-        @agent.prompt  # type: ignore[untyped-decorator]
         @inject
         async def dynamic_prompt(
             ctx: Context,
@@ -78,6 +63,17 @@ async def test_agent_prompt_uses_request_scope_via_dependencies() -> None:
             built = f"tenant={tenant} vars={ctx.variables}"
             prompts.append(built)
             return built
+
+        agent = Agent(
+            "assistant",
+            prompt=dynamic_prompt,
+            config=TestConfig(
+                ToolCallEvent(name="noop", arguments="{}"),
+                "Done.",
+            ),
+            dependencies={CONTAINER_NAME: container},
+            middleware=[middleware],
+        )
 
         @agent.tool  # type: ignore[untyped-decorator]
         async def noop() -> str:
