@@ -1,15 +1,16 @@
-from typing import cast
-
 from autogen.beta.context import Context
 from dishka import AsyncContainer, Container
 from dishka.exception_base import DishkaError
 
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._scope import AG2Scope
-from dishka_ag2._types import ContainerT, CurrentContainer
+from dishka_ag2._types import ContainerT
 
 
-def _get_container_from_context(context: Context) -> CurrentContainer:
+def _get_container_from_context(
+    context: Context,
+    container_type: type[ContainerT],
+) -> ContainerT:
     try:
         container = context.dependencies[CONTAINER_NAME]
     except KeyError as e:
@@ -18,23 +19,19 @@ def _get_container_from_context(context: Context) -> CurrentContainer:
             "Make sure DishkaAsyncMiddleware or DishkaSyncMiddleware is configured."
         )
         raise DishkaError(msg) from e
-    return cast("CurrentContainer", container)
+
+    if not isinstance(container, container_type):
+        msg = f"Expected {container_type.__name__}"
+        raise DishkaError(msg)
+    return container
 
 
 def get_async_container_from_context(context: Context) -> AsyncContainer:
-    container = _get_container_from_context(context)
-    if not isinstance(container, AsyncContainer):
-        msg = "Expected AsyncContainer"
-        raise DishkaError(msg)
-    return container
+    return _get_container_from_context(context, AsyncContainer)
 
 
 def get_sync_container_from_context(context: Context) -> Container:
-    container = _get_container_from_context(context)
-    if not isinstance(container, Container):
-        msg = "Expected Container"
-        raise DishkaError(msg)
-    return container
+    return _get_container_from_context(context, Container)
 
 
 def walk_to_scope(container: ContainerT, scope: AG2Scope) -> ContainerT | None:

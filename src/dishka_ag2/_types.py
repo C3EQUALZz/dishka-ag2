@@ -1,8 +1,6 @@
-from typing import NewType, ParamSpec, TypeAlias, TypeVar
+from typing import NewType, ParamSpec, TypeVar
 
 from dishka import AsyncContainer, Container
-
-CurrentContainer: TypeAlias = AsyncContainer | Container
 
 ConversationAsyncContainer = NewType(
     "ConversationAsyncContainer",

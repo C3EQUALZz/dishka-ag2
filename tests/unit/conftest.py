@@ -3,7 +3,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
 from autogen.beta.middleware import Middleware
-from dishka import make_async_container, make_container
+from dishka import AsyncContainer, Container, make_async_container, make_container
 
 from dishka_ag2 import (
     AG2Provider,
@@ -11,12 +11,11 @@ from dishka_ag2 import (
     DishkaAsyncMiddleware,
     DishkaSyncMiddleware,
 )
-from dishka_ag2._types import CurrentContainer
 from tests.common import AppProvider
 
 
 async def _close_container(
-    container: CurrentContainer,
+    container: AsyncContainer | Container,
 ) -> None:
     result = container.close()
     if inspect.isawaitable(result):
@@ -30,11 +29,11 @@ async def create_ag2_env(
     use_async_container: bool,
 ) -> AsyncIterator[
     tuple[
-        CurrentContainer,
+        AsyncContainer | Container,
         Middleware,
     ]
 ]:
-    container: CurrentContainer
+    container: AsyncContainer | Container
 
     if use_async_container:
         container = make_async_container(
