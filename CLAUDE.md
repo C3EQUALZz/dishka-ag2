@@ -6,13 +6,16 @@ Integration of [Dishka](https://github.com/reagento/dishka) DI framework with [A
 
 ```
 src/dishka_ag2/
-  _consts.py      # Constants: container keys, hidden Context parameter, CurrentContainer alias
-  _container.py   # Container getters from AG2 Context + walk_to_root
-  _context.py     # build_context_getter: resolves Context param from func signature
-  _injectors.py   # inject() decorator using wrap_injection + fast_depends
-  _middleware.py   # DishkaMiddleware: on_turn (SESSION) + on_tool_execution (REQUEST)
-  autogen.py      # AG2Provider, public re-exports
-  __init__.py     # Public API: AG2Provider, DishkaMiddleware, FromDishka, inject
+  _consts.py            # Constants: container keys and hidden Context parameter
+  _types.py             # NewType wrappers and generic helper types
+  _scope.py             # AG2Scope definition
+  _container.py         # Container getters from AG2 Context + scope walking helpers
+  _container_context.py # SESSION/REQUEST context managers around AG2 context.dependencies
+  _context_getter.py    # build_context_getter: resolves Context param from func signature
+  _injectors.py         # inject() decorator using dishka wrap_injection
+  _middleware.py        # DishkaAsyncMiddleware / DishkaSyncMiddleware
+  ag2.py                # AG2Provider, public re-exports
+  __init__.py           # Public API: AG2Provider, middleware, FromDishka, inject
 ```
 
 ## Commands
@@ -34,11 +37,12 @@ middleware puts the root container there on `__init__`, and each scope hook uses
 save/restore: it captures the current value, overwrites with the new child
 container, and restores on exit.
 
-| Dishka Scope     | AG2 Hook            | How it gets there                                   |
-|------------------|---------------------|-----------------------------------------------------|
-| `Scope.APP`      | middleware `__init__` | Root container set in `context.dependencies`      |
-| `Scope.SESSION`  | `on_turn`           | Child of whatever is currently under the key (root) |
-| `Scope.REQUEST`  | `on_tool_execution`, `on_llm_call`, `on_human_input` | Child of SESSION (if in turn) or APP |
+| AG2 scope               | AG2 Hook / lifecycle                                   | How it gets there                                      |
+|-------------------------|--------------------------------------------------------|--------------------------------------------------------|
+| `AG2Scope.APP`          | root container                                         | Root container set in `context.dependencies`           |
+| `AG2Scope.CONVERSATION` | explicit `container(scope=AG2Scope.CONVERSATION)`      | Opened by user and passed via `dependencies`           |
+| `AG2Scope.SESSION`      | `on_turn`                                              | Child of the current container                         |
+| `AG2Scope.REQUEST`      | `on_tool_execution`, `on_llm_call`, `on_human_input`   | Child of SESSION, or root/current container if needed  |
 
 ### AG2Provider context types
 
@@ -54,10 +58,10 @@ tests/
   conftest.py         # Shared fixtures: app_provider, make_context, make_tool_call
   unit/
     conftest.py       # create_ag2_env() context manager
-    test_middleware.py # Scope lifecycle: REQUEST, SESSION, APP, cleanup
+    middleware/        # Scope lifecycle: REQUEST, SESSION, APP, cleanup
     test_errors.py    # Error cases: wrong container type, missing middleware
   integration/
-    test_agent.py     # Full agent.ask() flow via TestConfig
+    */                 # Feature-oriented packages with async/sync coverage
 ```
 
 ## Code style
