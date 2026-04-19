@@ -3,7 +3,6 @@
 from collections.abc import Sequence
 
 import pytest
-from autogen.beta.context import Context
 from autogen.beta.events import (
     BaseEvent,
     HumanInputRequest,
@@ -14,6 +13,7 @@ from autogen.beta.events import (
 )
 
 from dishka_ag2 import FromDishka, inject
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME, SESSION_CONTAINER_NAME
 from tests.common import (
     SESSION_DEP_VALUE,
@@ -25,6 +25,7 @@ from tests.conftest import (
     make_context,
     make_human_input_request,
     make_llm_events,
+    make_model_response,
     make_tool_call,
 )
 from tests.unit.conftest import create_ag2_env
@@ -57,7 +58,7 @@ async def test_session_scope_via_on_turn(
         ) -> ModelResponse:
             result = handle(ctx)
             assert result == str(SESSION_DEP_VALUE)
-            return ModelResponse(message=result)
+            return make_model_response(result)
 
         await instance.on_turn(turn_body, event, context)
         app_provider.session_released.assert_called_once()
@@ -109,7 +110,7 @@ async def test_session_shared_across_tool_calls(
                     tool_event,
                     ctx,
                 )
-            return ModelResponse(message="done")
+            return make_model_response("done")
 
         await instance.on_turn(turn_body, event, context)
 
@@ -136,7 +137,7 @@ async def test_session_container_restored_to_root(
             ctx: Context,
         ) -> ModelResponse:
             assert ctx.dependencies[CONTAINER_NAME] is not root
-            return ModelResponse(message="ok")
+            return make_model_response("ok")
 
         await instance.on_turn(turn_body, event, context)
         assert context.dependencies[CONTAINER_NAME] is root
@@ -157,7 +158,7 @@ async def test_session_scope_cleanup_on_exception(
         async def turn_body(
             ev: BaseEvent,
             ctx: Context,
-        ) -> None:
+        ) -> ModelResponse:
             ctx.dependencies[CONTAINER_NAME].get(SessionDep)
             raise RuntimeError("boom")
 
@@ -197,7 +198,7 @@ async def test_base_event_injected_at_session(
             ctx: Context,
         ) -> ModelResponse:
             result = handle(ctx)
-            return ModelResponse(message=result)
+            return make_model_response(result)
 
         await instance.on_turn(turn_body, event, context)
 
@@ -241,7 +242,7 @@ async def test_llm_call_uses_session_container(
                 llm_ctx: Context,
             ) -> ModelResponse:
                 handle(llm_ctx)
-                return ModelResponse(message="ok")
+                return make_model_response("ok")
 
             await instance.on_llm_call(llm_call_next, events, ctx)
 
@@ -261,7 +262,7 @@ async def test_llm_call_uses_session_container(
                 tool_event,
                 ctx,
             )
-            return ModelResponse(message="done")
+            return make_model_response("done")
 
         await instance.on_turn(turn_body, event, context)
 
@@ -331,7 +332,7 @@ async def test_human_input_uses_session_container(
                 tool_event,
                 ctx,
             )
-            return ModelResponse(message="done")
+            return make_model_response("done")
 
         await instance.on_turn(turn_body, event, context)
 

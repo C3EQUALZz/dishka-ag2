@@ -53,7 +53,7 @@ async def test_nested_agent_ask_can_share_explicit_conversation_scope() -> None:
             variables={"agent_name": "parent"},
         )
 
-        @child_agent.tool  # type: ignore[untyped-decorator]
+        @child_agent.tool
         @inject
         async def child_lookup(
             topic: str,
@@ -71,7 +71,7 @@ async def test_nested_agent_ask_can_share_explicit_conversation_scope() -> None:
             )
             return f"child ok: {topic}"
 
-        @parent_agent.tool  # type: ignore[untyped-decorator]
+        @parent_agent.tool
         @inject
         async def ask_child(
             question: str,
@@ -158,7 +158,7 @@ async def test_async_tool_can_receive_only_conversation_container() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         async def check(
             conversation_container: FromDishka[ConversationAsyncContainer],

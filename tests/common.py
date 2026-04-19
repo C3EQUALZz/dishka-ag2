@@ -5,13 +5,14 @@ from typing import Any, NewType
 from unittest.mock import Mock
 from uuid import UUID, uuid4
 
-from autogen.beta.context import Context, Stream, SubId
+from autogen.beta.context import Stream, SubId
 from autogen.beta.events import BaseEvent
 from autogen.beta.events.conditions import Condition
 from autogen.beta.types import ClassInfo
 from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope
+from dishka_ag2._compat import Context
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = AppDep("APP")
@@ -58,7 +59,7 @@ class AppProvider(Provider):
         return self.mock
 
 
-class DummyStream(Stream):  # type: ignore[misc]
+class DummyStream(Stream):
     id: UUID = uuid4()
 
     async def send(
@@ -81,7 +82,7 @@ class DummyStream(Stream):  # type: ignore[misc]
     ) -> AbstractContextManager[AsyncIterator[BaseEvent]]:
         raise NotImplementedError
 
-    def subscribe(
+    def subscribe(  # type: ignore[override]
         self,
         func: Callable[..., Any] | None = None,
         *,

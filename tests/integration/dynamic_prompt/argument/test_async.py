@@ -40,7 +40,7 @@ async def test_init_prompt_uses_app_scope_via_dependencies() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         async def noop() -> str:
             return "ok"
 
@@ -75,7 +75,7 @@ async def test_init_prompt_uses_request_scope_via_dependencies() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         async def noop() -> str:
             return "ok"
 

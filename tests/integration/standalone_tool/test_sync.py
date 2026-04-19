@@ -19,7 +19,7 @@ from tests.integration.conftest import sync_env
 async def test_standalone_tool_injects_request_sync(
     app_provider: AppProvider,
 ) -> None:
-    @tool  # type: ignore[untyped-decorator]
+    @tool
     @inject
     def greet(
         name: str,

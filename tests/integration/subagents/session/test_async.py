@@ -46,7 +46,7 @@ async def test_nested_agent_ask_uses_separate_session_and_request() -> None:
             variables={"agent_name": "parent"},
         )
 
-        @child_agent.tool  # type: ignore[untyped-decorator]
+        @child_agent.tool
         @inject
         async def child_lookup(
             topic: str,
@@ -67,7 +67,7 @@ async def test_nested_agent_ask_uses_separate_session_and_request() -> None:
             )
             return "child ok"
 
-        @parent_agent.tool  # type: ignore[untyped-decorator]
+        @parent_agent.tool
         @inject
         async def ask_child(
             question: str,

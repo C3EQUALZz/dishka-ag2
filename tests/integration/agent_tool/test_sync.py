@@ -34,7 +34,7 @@ async def test_agent_tool_injects_all_scopes_sync(
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         def check(
             app_dep: FromDishka[AppDep],
@@ -72,7 +72,7 @@ async def test_agent_tool_multiple_calls_sync(
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         def inc(
             request_dep: FromDishka[RequestDep],

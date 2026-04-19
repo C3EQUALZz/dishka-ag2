@@ -9,10 +9,10 @@ __all__ = (
     "inject",
 )
 
-from autogen.beta.context import Context
 from autogen.beta.events import BaseEvent, HumanInputRequest, ToolCallEvent
 from dishka import Provider, from_context
 
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._injectors import inject
 from dishka_ag2._middleware import DishkaAsyncMiddleware, DishkaSyncMiddleware

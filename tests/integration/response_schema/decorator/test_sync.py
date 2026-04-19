@@ -12,7 +12,7 @@ from tests.integration.response_schema.common import ParserService, SchemaProvid
 
 @pytest.mark.asyncio()
 async def test_response_schema_plain_sync() -> None:
-    @response_schema  # type: ignore[untyped-decorator]
+    @response_schema
     def parse_int(content: str) -> int:
         return int(content.strip())
 
@@ -30,7 +30,7 @@ async def test_response_schema_plain_sync() -> None:
 
 @pytest.mark.asyncio()
 async def test_response_schema_injected_app_scope_sync() -> None:
-    @response_schema  # type: ignore[untyped-decorator]
+    @response_schema
     @inject
     def parse_int_injected(
         content: str,
@@ -54,7 +54,7 @@ async def test_response_schema_injected_app_scope_sync() -> None:
 async def test_response_schema_injected_request_scope_sync(
     app_provider: AppProvider,
 ) -> None:
-    @response_schema  # type: ignore[untyped-decorator]
+    @response_schema
     @inject
     def parse_int_request(
         content: str,

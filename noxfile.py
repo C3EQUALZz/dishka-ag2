@@ -5,13 +5,14 @@ nox.options.reuse_existing_virtualenvs = True
 nox.options.stop_on_first_error = True
 
 
-PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13"]
+PYTHON_VERSIONS = ["3.10", "3.11", "3.12", "3.13", "3.14"]
 DISHKA_VERSIONS = [
     nox.param("1.7.0", id="dishka-1.7.0"),
     nox.param(None, id="dishka-latest-compatible"),
 ]
 AG2_VERSIONS = [
     nox.param("0.11.5", id="ag2-0.11.5"),
+    nox.param("0.12.0", id="ag2-0.12.0"),
     nox.param(None, id="ag2-latest-compatible"),
 ]
 

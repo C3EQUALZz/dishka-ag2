@@ -46,7 +46,7 @@ async def test_agent_asks_use_separate_session_and_request_sync() -> None:
             variables={"agent_name": "child"},
         )
 
-        @parent_agent.tool  # type: ignore[untyped-decorator]
+        @parent_agent.tool
         @inject
         def parent_lookup(
             topic: str,
@@ -67,7 +67,7 @@ async def test_agent_asks_use_separate_session_and_request_sync() -> None:
             )
             return "parent ok"
 
-        @child_agent.tool  # type: ignore[untyped-decorator]
+        @child_agent.tool
         @inject
         def child_lookup(
             topic: str,
