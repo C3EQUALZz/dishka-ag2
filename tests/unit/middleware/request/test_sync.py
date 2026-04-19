@@ -4,7 +4,6 @@ from collections.abc import Sequence
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta.context import Context
 from autogen.beta.events import (
     BaseEvent,
     HumanInputRequest,
@@ -16,13 +15,16 @@ from autogen.beta.events import (
 from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME, PENDING_REQUEST_CONTEXT
 from tests.common import REQUEST_DEP_VALUE, AppProvider, RequestDep
 from tests.conftest import (
     make_context,
     make_human_input_request,
     make_llm_events,
+    make_model_response,
     make_tool_call,
+    response_content,
 )
 from tests.unit.conftest import create_ag2_env
 
@@ -57,6 +59,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
             )
 
         result = await instance.on_tool_execution(call_next, event, context)
+        assert isinstance(result, ToolResultEvent)
         assert result.result.content == "ok"
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
@@ -94,6 +97,7 @@ async def test_injection_uses_positional_context(
             )
 
         result = await instance.on_tool_execution(call_next, event, context)
+        assert isinstance(result, ToolResultEvent)
         assert result.result.content == "{}"
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
 
@@ -232,10 +236,10 @@ async def test_llm_call_request_dependency(
             ctx: Context,
         ) -> ModelResponse:
             result = handle(ctx)
-            return ModelResponse(message=result)
+            return make_model_response(result)
 
         result = await instance.on_llm_call(call_next, events, context)
-        assert result.message == "ok"
+        assert response_content(result) == "ok"
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
 
 

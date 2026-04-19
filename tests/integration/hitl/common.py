@@ -46,7 +46,7 @@ class HitlProvider(BaseHitlProvider):
         return ConfirmationService(tool_name=event.name)
 
 
-@tool  # type: ignore[untyped-decorator]
+@tool
 async def ask_human(context: Context, prompt: str = "Approve?") -> str:
     answer: str = await context.input(prompt)
     return answer

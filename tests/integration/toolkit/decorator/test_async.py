@@ -24,7 +24,7 @@ async def test_toolkit_decorator_injects_request_deps() -> None:
 
     toolkit = Toolkit()
 
-    @toolkit.tool  # type: ignore[untyped-decorator]
+    @toolkit.tool
     @inject
     async def get_weather(
         city: str,

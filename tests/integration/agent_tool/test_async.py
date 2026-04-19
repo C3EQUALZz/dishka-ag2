@@ -80,7 +80,7 @@ async def test_agent_tool_injects_all_scopes(
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         async def check(
             app_dep: FromDishka[AppDep],
@@ -117,7 +117,7 @@ async def test_agent_tool_request_scope_per_call() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         async def greet(
             name: str,
@@ -149,7 +149,7 @@ async def test_agent_tool_session_state_shared_across_calls() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         async def visit(
             conversation: FromDishka[ConversationState],

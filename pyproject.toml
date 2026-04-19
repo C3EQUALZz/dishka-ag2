@@ -28,6 +28,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Software Development :: Libraries",
     "Typing :: Typed",
     "Intended Audience :: Developers",
@@ -35,11 +36,11 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.10"
 
 dependencies = [
     "dishka>=1.7,<2",
-    "ag2>=0.11.5,<0.12",
+    "ag2>=0.11.5,<0.13",
 ]
 
 [project.urls]

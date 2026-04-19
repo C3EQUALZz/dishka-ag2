@@ -2,9 +2,9 @@ from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any
 
-from autogen.beta.context import Context
 from dishka import AsyncContainer, Container
 
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import (
     CONTAINER_NAME,
     PENDING_REQUEST_CONTEXT,

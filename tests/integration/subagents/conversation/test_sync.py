@@ -34,7 +34,7 @@ async def test_sync_tool_can_receive_conversation_container() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         def check(
             conversation_container: FromDishka[ConversationContainer],
@@ -67,7 +67,7 @@ async def test_sync_tool_can_receive_only_conversation_container() -> None:
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         def check(
             conversation_container: FromDishka[ConversationContainer],

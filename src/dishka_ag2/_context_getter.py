@@ -3,8 +3,7 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, cast, get_type_hints
 
-from autogen.beta.context import Context
-
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTEXT_PARAM
 
 

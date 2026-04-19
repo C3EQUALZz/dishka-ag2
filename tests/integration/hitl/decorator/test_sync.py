@@ -27,7 +27,7 @@ async def test_hitl_hook_via_decorator_sync() -> None:
             middleware=[middleware],
         )
 
-        @agent.hitl_hook  # type: ignore[untyped-decorator]
+        @agent.hitl_hook
         @inject
         def on_human(
             event: HumanInputRequest,

@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta.context import Context
 from autogen.beta.events import ToolCallEvent, ToolResultEvent
 
 from dishka_ag2 import FromDishka, inject
+from dishka_ag2._compat import Context
 from tests.common import APP_DEP_VALUE, AppDep, AppMock, AppProvider
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env

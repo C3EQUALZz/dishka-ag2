@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 from typing import Final
 
-from autogen.beta.context import Context
 from autogen.beta.events import (
     BaseEvent,
     HumanInputRequest,
@@ -20,6 +19,7 @@ from autogen.beta.middleware import (
 from dishka import AsyncContainer, Container
 from typing_extensions import override
 
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._container_context import (
     async_session_scope,
@@ -28,7 +28,7 @@ from dishka_ag2._container_context import (
 )
 
 
-class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
+class DishkaAsyncMiddleware(BaseMiddleware):
     def __init__(
         self,
         event: BaseEvent,
@@ -89,7 +89,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):  # type: ignore[misc]
             return await call_next(event, context)
 
 
-class DishkaSyncMiddleware(BaseMiddleware):  # type: ignore[misc]
+class DishkaSyncMiddleware(BaseMiddleware):
     def __init__(
         self,
         event: BaseEvent,

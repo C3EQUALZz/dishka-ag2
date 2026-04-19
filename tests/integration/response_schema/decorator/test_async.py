@@ -12,7 +12,7 @@ from tests.integration.response_schema.common import ParserService, SchemaProvid
 
 @pytest.mark.asyncio()
 async def test_response_schema_plain() -> None:
-    @response_schema  # type: ignore[untyped-decorator]
+    @response_schema
     def parse_int(content: str) -> int:
         return int(content.strip())
 
@@ -30,7 +30,7 @@ async def test_response_schema_plain() -> None:
 
 @pytest.mark.asyncio()
 async def test_response_schema_injected_app_scope() -> None:
-    @response_schema  # type: ignore[untyped-decorator]
+    @response_schema
     @inject
     async def parse_int_injected(
         content: str,
@@ -47,14 +47,15 @@ async def test_response_schema_injected_app_scope() -> None:
         )
 
         reply = await agent.ask("Return 43.")
-        assert await reply.content() == 43
+        content = await reply.content()
+        assert content == 43  # type: ignore[comparison-overlap]
 
 
 @pytest.mark.asyncio()
 async def test_response_schema_injected_request_scope(
     app_provider: AppProvider,
 ) -> None:
-    @response_schema  # type: ignore[untyped-decorator]
+    @response_schema
     @inject
     async def parse_int_request(
         content: str,
@@ -72,5 +73,6 @@ async def test_response_schema_injected_request_scope(
         )
 
         reply = await agent.ask("Return 77.")
-        assert await reply.content() == 77
+        content = await reply.content()
+        assert content == 77  # type: ignore[comparison-overlap]
         assert app_provider.request_released.call_count >= 1

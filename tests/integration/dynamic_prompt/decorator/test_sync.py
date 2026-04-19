@@ -30,7 +30,7 @@ async def test_agent_prompt_uses_app_scope_via_dependencies_sync() -> None:
 
         prompts: list[str] = []
 
-        @agent.prompt  # type: ignore[untyped-decorator]
+        @agent.prompt
         @inject
         def dynamic_prompt(
             ctx: Context,
@@ -40,7 +40,7 @@ async def test_agent_prompt_uses_app_scope_via_dependencies_sync() -> None:
             prompts.append(built)
             return built
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         def noop() -> str:
             return "ok"
 
@@ -65,7 +65,7 @@ async def test_agent_prompt_uses_request_scope_via_dependencies_sync() -> None:
 
         prompts: list[str] = []
 
-        @agent.prompt  # type: ignore[untyped-decorator]
+        @agent.prompt
         @inject
         def dynamic_prompt(
             ctx: Context,
@@ -75,7 +75,7 @@ async def test_agent_prompt_uses_request_scope_via_dependencies_sync() -> None:
             prompts.append(built)
             return built
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         def noop() -> str:
             return "ok"
 

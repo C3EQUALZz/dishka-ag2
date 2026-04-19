@@ -3,9 +3,9 @@ from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import Any, overload
 
-from autogen.beta.context import Context
 from dishka.integrations.base import wrap_injection
 
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import PENDING_REQUEST_CONTEXT
 from dishka_ag2._container import (
     get_async_container_from_context,

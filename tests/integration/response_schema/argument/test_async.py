@@ -31,7 +31,7 @@ async def test_response_schema_with_tool_injection(
             middleware=[middleware],
         )
 
-        @agent.tool  # type: ignore[untyped-decorator]
+        @agent.tool
         @inject
         async def check(
             app_dep: FromDishka[AppDep],

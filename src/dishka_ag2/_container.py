@@ -1,7 +1,7 @@
-from autogen.beta.context import Context
 from dishka import AsyncContainer, Container
 from dishka.exception_base import DishkaError
 
+from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._scope import AG2Scope
 from dishka_ag2._types import ContainerT

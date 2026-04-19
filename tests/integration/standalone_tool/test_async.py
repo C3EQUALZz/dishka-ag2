@@ -50,7 +50,7 @@ async def test_standalone_tool_injects_session_and_request() -> None:
     sessions: list[UUID] = []
     counters: list[int] = []
 
-    @tool  # type: ignore[untyped-decorator]
+    @tool
     @inject
     async def greet(
         name: str,
