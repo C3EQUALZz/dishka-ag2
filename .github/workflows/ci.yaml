@@ -36,7 +36,7 @@ jobs:
       with:
         just-version: 1.43.0
 
-    - uses: j178/prek-action@53276d8b0d10f8b6672aa85b4588c6921d0370cc # v2.0.1
+    - uses: j178/prek-action@cbc2f23eb5539cf20d82d1aabd0d0ecbcc56f4e3 # v2.0.2
   test:
     runs-on: ubuntu-latest
     steps:
@@ -47,5 +47,5 @@ jobs:
     - name: Install uv
       uses: astral-sh/setup-uv@cec208311dfd045dd5311c1add060b2062131d57 # v7
 
-    - uses: wntrblm/nox@5a277b752f6094150e25237d47c34168e2b7526e  # v2026.02.09
+    - uses: wntrblm/nox@97e345e6a26bb2c5aacff9cc4327bd4ac1b00ce6  # v2026.04.10
     - run: nox
