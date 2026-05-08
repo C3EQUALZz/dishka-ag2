@@ -37,8 +37,8 @@ def tool_result_content(event: ToolResultEvent) -> str:
     tool_result = event.result
     if hasattr(tool_result, "parts"):
         part = tool_result.parts[0]
-        return part.content if hasattr(part, "content") else str(part)
-    return tool_result.content  # type: ignore[no-any-return]
+        return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
+    return tool_result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
 
 
 def make_context() -> Context:
