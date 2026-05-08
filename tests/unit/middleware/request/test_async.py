@@ -25,6 +25,7 @@ from tests.conftest import (
     make_model_response,
     make_tool_call,
     response_content,
+    tool_result_content,
 )
 from tests.unit.conftest import create_ag2_env
 
@@ -63,7 +64,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
         result = await instance.on_tool_execution(call_next, event, context)
         assert isinstance(result, ToolResultEvent)
-        assert result.result.content == "ok"
+        assert tool_result_content(result) == "ok"
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
         app_provider.request_released.assert_called_once()
 
@@ -102,7 +103,7 @@ async def test_injection_uses_positional_context(
 
         result = await instance.on_tool_execution(call_next, event, context)
         assert isinstance(result, ToolResultEvent)
-        assert result.result.content == "{}"
+        assert tool_result_content(result) == "{}"
         app_provider.mock.assert_called_with(REQUEST_DEP_VALUE)
 
 

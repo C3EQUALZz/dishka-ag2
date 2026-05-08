@@ -4,6 +4,7 @@ from autogen.beta.events import (
     ModelRequest,
     ModelResponse,
     ToolCallEvent,
+    ToolResultEvent,
 )
 
 from dishka_ag2._compat import Context
@@ -25,6 +26,19 @@ except ImportError:  # pragma: no cover - ag2 < 0.12
 
     def response_content(response: ModelResponse) -> str:
         return response.message  # type: ignore[return-value]
+
+
+def tool_result_content(event: ToolResultEvent) -> str:
+    """Extract textual payload from a ToolResultEvent across ag2 versions.
+
+    ag2 <= 0.12.0 stored the value on ``ToolResult.content``;
+    ag2 >= 0.12.1 wraps it as ``TextInput`` inside ``ToolResult.parts``.
+    """
+    tool_result = event.result
+    if hasattr(tool_result, "parts"):
+        part = tool_result.parts[0]
+        return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return]
+    return tool_result.content  # type: ignore[no-any-return,union-attr]
 
 
 def make_context() -> Context:
