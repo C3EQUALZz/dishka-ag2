@@ -13,6 +13,7 @@ DISHKA_VERSIONS = [
 AG2_VERSIONS = [
     nox.param("0.11.5", id="ag2-0.11.5"),
     nox.param("0.12.0", id="ag2-0.12.0"),
+    nox.param("0.13.1", id="ag2-0.13.1"),
     nox.param(None, id="ag2-latest-compatible"),
 ]
 

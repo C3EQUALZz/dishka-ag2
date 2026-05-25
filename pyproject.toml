@@ -40,7 +40,7 @@ requires-python = ">=3.10"
 
 dependencies = [
     "dishka>=1.7,<2",
-    "ag2>=0.11.5,<0.13",
+    "ag2>=0.11.5",
 ]
 
 [project.urls]

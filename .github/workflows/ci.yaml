@@ -15,6 +15,9 @@ on:
       - main
       - develop
       - master
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
 
 permissions:
   actions: read

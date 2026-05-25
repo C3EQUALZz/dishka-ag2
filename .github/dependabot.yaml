@@ -27,6 +27,17 @@ updates:
       default-days: 7
     open-pull-requests-limit: 10
     groups:
+      integration-targets:
+        patterns:
+          - "ag2"
+          - "ag2-*"
+          - "autogen-*"
+          - "dishka"
       pip:
         patterns:
           - "*"
+        exclude-patterns:
+          - "ag2"
+          - "ag2-*"
+          - "autogen-*"
+          - "dishka"

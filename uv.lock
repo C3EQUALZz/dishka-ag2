@@ -601,7 +601,7 @@ test = [
 
 [package.metadata]
 requires-dist = [
-    { name = "ag2", specifier = ">=0.11.5,<0.13" },
+    { name = "ag2", specifier = ">=0.11.5" },
     { name = "dishka", specifier = ">=1.7,<2" },
 ]
 
