@@ -1,7 +1,7 @@
 import asyncio
-from collections.abc import AsyncIterator, Callable, Iterable
+from collections.abc import AsyncIterator, Callable, Coroutine, Iterable
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
-from typing import Any, NewType
+from typing import TYPE_CHECKING, Any, NewType
 from unittest.mock import Mock
 from uuid import UUID, uuid4
 
@@ -13,6 +13,13 @@ from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope
 from dishka_ag2._compat import Context
+
+if TYPE_CHECKING:
+    # Added to the Stream protocol in ag2 0.13.4; only needed for type
+    # checking against the latest version. Older ag2 releases (run in the
+    # nox matrix) lack these names, so they must not be imported at runtime.
+    from autogen.beta.events import Input, ModelRequest
+    from autogen.beta.types import SendableMessage
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = AppDep("APP")
@@ -61,6 +68,19 @@ class AppProvider(Provider):
 
 class DummyStream(Stream):
     id: UUID = uuid4()
+    pending_messages: "list[ModelRequest]" = []  # noqa: RUF012
+
+    def enqueue(
+        self,
+        *content: "SendableMessage | Input",
+    ) -> None:
+        raise NotImplementedError
+
+    def spawn_background(
+        self,
+        coro: Coroutine[Any, Any, None],
+    ) -> asyncio.Task[None]:
+        raise NotImplementedError
 
     async def send(
         self,
