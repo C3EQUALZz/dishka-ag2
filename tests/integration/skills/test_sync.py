@@ -36,6 +36,7 @@ pytestmark = requires_skills
 async def test_skill_executes_and_request_scope_injects_sync(skills_dir: Path) -> None:
     provider = SkillsProvider()
     sessions: list[UUID] = []
+    request_ids: list[UUID] = []
     tool_names: list[str] = []
     skill_outputs: list[str] = []
 
@@ -47,6 +48,7 @@ async def test_skill_executes_and_request_scope_injects_sync(skills_dir: Path) -
         request: FromDishka[ToolRequestState],
     ) -> str:
         sessions.append(session.session_id)
+        request_ids.append(request.request_id)
         tool_names.append(request.tool_name)
         return f"remembered {name}"
 
@@ -76,3 +78,5 @@ async def test_skill_executes_and_request_scope_injects_sync(skills_dir: Path) -
     assert tool_names == ["remember", "remember"]
     assert len(sessions) == 2
     assert sessions[0] == sessions[1]
+    assert len(request_ids) == 2
+    assert request_ids[0] != request_ids[1]
