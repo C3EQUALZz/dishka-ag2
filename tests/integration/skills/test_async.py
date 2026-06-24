@@ -24,6 +24,7 @@ from tests.integration.skills.common import (
     SKILL_NAME,
     SkillsProvider,
     make_result_collector,
+    make_skill_plugin,
     make_skills_toolkit,
     requires_skills,
 )
@@ -80,5 +81,49 @@ async def test_skill_executes_and_request_scope_injects_async(skills_dir: Path) 
     assert tool_names == ["remember", "remember"]
     assert len(sessions) == 2
     assert sessions[0] == sessions[1]
+    assert len(request_ids) == 2
+    assert request_ids[0] != request_ids[1]
+
+
+@pytest.mark.asyncio()
+async def test_skill_plugin_path_request_scope_injects_async(skills_dir: Path) -> None:
+    """Skills attached via ``plugins=[SkillPlugin(...)]`` behave like the toolkit.
+
+    The plugin's ``load_skill`` runs while a user's own ``@inject`` tool keeps
+    resolving fresh REQUEST-scoped dependencies on each call.
+    """
+    provider = SkillsProvider()
+    request_ids: list[UUID] = []
+    skill_outputs: list[str] = []
+
+    @tool
+    @inject
+    async def remember(
+        name: str,
+        request: FromDishka[ToolRequestState],
+    ) -> str:
+        request_ids.append(request.request_id)
+        return f"remembered {name}"
+
+    collect_results = make_result_collector(skill_outputs)
+
+    async with async_env(provider) as (_, middleware):
+        agent = Agent(
+            "assistant",
+            config=TestConfig(
+                ToolCallEvent(name="load_skill", arguments=f'{{"name": "{SKILL_NAME}"}}'),
+                ToolCallEvent(name="remember", arguments='{"name": "Alice"}'),
+                ToolCallEvent(name="remember", arguments='{"name": "Bob"}'),
+                "All done.",
+            ),
+            plugins=[make_skill_plugin(skills_dir)],
+            tools=[remember],
+            observers=[collect_results],
+            middleware=[middleware],
+        )
+
+        await agent.ask("Load the greeting skill, then remember Alice and Bob.")
+
+    assert any(SKILL_BODY_MARKER in out for out in skill_outputs)
     assert len(request_ids) == 2
     assert request_ids[0] != request_ids[1]

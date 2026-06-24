@@ -20,6 +20,7 @@ from dishka_ag2 import AG2Scope
 from tests.integration.scope_state import SessionState, ToolRequestState
 
 if TYPE_CHECKING:
+    from autogen.beta.agent import Plugin
     from autogen.beta.observers import Observer
     from autogen.beta.tools import Toolkit
 
@@ -36,7 +37,7 @@ if SKILLS_AVAILABLE:
     # ``autogen.beta.observers`` is also new in 0.13.4, so it must stay behind
     # the version guard or older nox-matrix runs fail to import this module.
     from autogen.beta.observers import observer
-    from autogen.beta.tools.skills import LocalRuntime, SkillsToolkit
+    from autogen.beta.tools.skills import LocalRuntime, SkillPlugin, SkillsToolkit
 
 SKILL_NAME = "greeting"
 SKILL_DESCRIPTION = "Produce a friendly greeting for a given person."
@@ -68,6 +69,11 @@ def write_skill(skills_dir: Path) -> Path:
 def make_skills_toolkit(skills_dir: Path) -> "Toolkit":
     """Build a SkillsToolkit rooted at ``skills_dir`` (ag2 >= 0.13.4 only)."""
     return SkillsToolkit(LocalRuntime(str(skills_dir)))
+
+
+def make_skill_plugin(skills_dir: Path) -> "Plugin":
+    """Build a SkillPlugin rooted at ``skills_dir`` (ag2 >= 0.13.4 only)."""
+    return SkillPlugin(str(skills_dir))
 
 
 def tool_result_text(event: ToolResultEvent) -> str:
