@@ -27,6 +27,7 @@ Though it is not required, you can use *dishka-ag2* integration. It features:
 | `@agent.tool`                                   | yes            | yes                     | yes                | yes                | Main supported path for injected tools.                                                                                                                  |
 | standalone `@tool` in `Agent(..., tools=[...])` | yes            | yes                     | yes                | yes                | Same lifecycle as `@agent.tool`.                                                                                                                         |
 | `Toolkit` / custom `Tool` execution             | yes            | yes                     | yes                | yes                | Works for actual tool functions if the custom tool forwards `middleware` in `register()`.                                                                |
+| Agent skills (`SkillsToolkit` / `SkillPlugin`)  | yes            | yes                     | yes                | yes                | ag2 >= 0.13.4. Skill tools execute under `REQUEST`; your own `@inject` tools resolve normally alongside them.                                            |
 | `on_llm_call` middleware path                   | yes            | yes                     | yes                | yes                | `REQUEST` is opened for every model call.                                                                                                                |
 | HITL hooks (`hitl_hook=` / `@agent.hitl_hook`)  | yes            | yes                     | yes                | yes                | `HumanInputRequest` is available in `REQUEST` scope.                                                                                                     |
 | `@agent.prompt`                                 | yes            | yes                     | no                 | yes                | Dynamic prompts run before middleware is constructed. Use `dependencies={CONTAINER_NAME: container}` so `@inject` can open `REQUEST` from the container. |
@@ -41,6 +42,7 @@ See the examples directory for runnable examples:
 * `examples/ag2_response_schema.py` - `response_schema` validators with injected APP/REQUEST dependencies.
 * `examples/ag2_subagents.py` - parent and child agents sharing one explicit `AG2Scope.CONVERSATION`.
 * `examples/ag2_toolkit.py` - AG2 `Toolkit` with injected tool functions.
+* `examples/ag2_skills.py` - agent skills (ag2 >= 0.13.4) loaded alongside an injected tool.
 
 ## Installation
 
@@ -361,6 +363,58 @@ async def get_weather(
 
 toolkit = Toolkit(get_weather)
 ```
+
+## Skills
+
+> Requires `ag2 >= 0.13.4`.
+
+Agent skills (`autogen.beta.tools.skills`) are exposed to the model as ordinary
+local tools — `list_skills`, `load_skill`, `read_skill_resource` and
+`run_skill_script`. Because they execute through `on_tool_execution`, they run
+under the same `REQUEST` scope the middleware opens for any other tool call, so
+nothing special is needed to use skills together with Dishka: your own
+`@inject` tools keep resolving `REQUEST`/`SESSION`/`APP` dependencies normally
+while the skill tools run alongside them.
+
+```python
+from autogen.beta.tools import tool
+from autogen.beta.tools.skills import LocalRuntime, SkillsToolkit
+
+
+@tool
+@inject
+async def remember(
+    name: str,
+    request: FromDishka[ToolRequestState],
+) -> str:
+    return f"remembered {name} (tool={request.tool_name})"
+
+
+agent = Agent(
+    "assistant",
+    tools=[
+        SkillsToolkit(LocalRuntime("./skills")),  # exposes load_skill(...), etc.
+        remember,                                  # your own injected tool
+    ],
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+You can also use `SkillPlugin` to inject the skill catalog into the system
+prompt instead of exposing a `list_skills` tool:
+
+```python
+from autogen.beta.tools.skills import SkillPlugin
+
+
+agent = Agent(
+    "assistant",
+    plugins=[SkillPlugin("./skills")],
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+See `examples/ag2_skills.py` for a runnable example.
 
 ## Conversation Scope and Subagents
 
