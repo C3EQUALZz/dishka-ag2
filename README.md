@@ -427,12 +427,16 @@ instructions, Resources and Scripts are in-memory values registered with
 `@skill.resource` / `@skill.script`. Each callable is wrapped with `tool()` and
 invoked through the same FastDepends path as any other tool, so an `@inject`
 script or resource resolves Dishka dependencies normally. Pass the skill (or the
-`MemoryRuntime` that owns it) straight to `SkillsToolkit` / `SkillPlugin`; the
-model runs a script via `run_skill_script`, which executes under the `REQUEST`
-scope the middleware opens on `on_tool_execution`.
+`MemoryRuntime` that owns it) straight to `SkillPlugin` (recommended) or
+`SkillsToolkit`; the model runs a script via `run_skill_script`, which executes
+under the `REQUEST` scope the middleware opens on `on_tool_execution`.
+
+`SkillPlugin` is the recommended way to attach skills: it injects the skill
+catalog into the system prompt (no `list_skills` round-trip) and registers only
+the activation tools the skills can actually use.
 
 ```python
-from autogen.beta.tools.skills import MemorySkill, SkillsToolkit
+from autogen.beta.tools.skills import MemorySkill, SkillPlugin
 
 skill = MemorySkill(
     name="unit-converter",
@@ -453,7 +457,7 @@ async def convert(
 
 agent = Agent(
     "assistant",
-    tools=[SkillsToolkit(skill)],  # a loose MemorySkill is wrapped automatically
+    plugins=[SkillPlugin(skill)],  # a loose MemorySkill is wrapped automatically
     middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
 )
 ```

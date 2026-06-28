@@ -8,10 +8,14 @@ Each Resource/Script callable is wrapped with ``tool()`` and invoked through the
 same FastDepends path as any other tool, threading the live ``Context`` -- so an
 ``@inject`` script resolves Dishka dependencies exactly like a regular tool.
 A ``MemorySkill`` (or the ``MemoryRuntime`` that owns it) is passed straight to
-``SkillsToolkit`` / ``SkillPlugin``, which exposes ``run_skill_script(...)`` to
-the model. That tool runs under the same ``REQUEST`` scope the middleware opens
-on every ``on_tool_execution``, so the in-process script gets fresh
-``REQUEST``-scoped dependencies on each call.
+``SkillPlugin`` (the recommended option) or ``SkillsToolkit``, which exposes
+``run_skill_script(...)`` to the model. That tool runs under the same ``REQUEST``
+scope the middleware opens on every ``on_tool_execution``, so the in-process
+script gets fresh ``REQUEST``-scoped dependencies on each call.
+
+``SkillPlugin`` injects the skill catalog into the system prompt and registers
+only the activation tools the skills actually need (``load_skill``,
+``read_skill_resource``, ``run_skill_script``).
 """
 
 import asyncio
@@ -25,7 +29,7 @@ from autogen.beta.events import ToolCallEvent, ToolResultEvent
 from autogen.beta.middleware import Middleware
 from autogen.beta.observers import observer
 from autogen.beta.testing import TestConfig
-from autogen.beta.tools.skills import MemorySkill, SkillsToolkit
+from autogen.beta.tools.skills import MemorySkill, SkillPlugin
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (
@@ -137,7 +141,9 @@ async def main() -> None:
             "All done.",
         ),
         # A loose MemorySkill is wrapped in a MemoryRuntime automatically.
-        tools=[SkillsToolkit(build_unit_converter_skill())],
+        # SkillPlugin (recommended) injects the catalog into the prompt and
+        # exposes load_skill / read_skill_resource / run_skill_script.
+        plugins=[SkillPlugin(build_unit_converter_skill())],
         observers=[log_skill_output],
         middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
     )
