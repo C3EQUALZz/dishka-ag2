@@ -20,8 +20,8 @@ from dishka_ag2 import AG2Scope
 from tests.integration.scope_state import SessionState, ToolRequestState
 
 if TYPE_CHECKING:
-    from autogen.beta.agent import Plugin
     from autogen.beta.observers import Observer
+    from autogen.beta.plugin import Plugin
     from autogen.beta.tools import Toolkit
 
 AG2_VERSION = Version(version("ag2"))
