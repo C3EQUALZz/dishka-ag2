@@ -35,10 +35,13 @@ def tool_result_content(event: ToolResultEvent) -> str:
     ag2 >= 0.12.1 wraps it as ``TextInput`` inside ``ToolResult.parts``.
     """
     tool_result = event.result
-    if hasattr(tool_result, "parts"):
-        part = tool_result.parts[0]
+    parts = getattr(tool_result, "parts", None)
+    if parts:
+        part = parts[0]
         return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
-    return tool_result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
+    if hasattr(tool_result, "content"):
+        return tool_result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
+    return str(tool_result)
 
 
 def make_context() -> Context:

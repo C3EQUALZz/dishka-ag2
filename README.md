@@ -28,6 +28,7 @@ Though it is not required, you can use *dishka-ag2* integration. It features:
 | standalone `@tool` in `Agent(..., tools=[...])` | yes            | yes                     | yes                | yes                | Same lifecycle as `@agent.tool`.                                                                                                                         |
 | `Toolkit` / custom `Tool` execution             | yes            | yes                     | yes                | yes                | Works for actual tool functions if the custom tool forwards `middleware` in `register()`.                                                                |
 | Agent skills (`SkillsToolkit` / `SkillPlugin`)  | yes            | yes                     | yes                | yes                | ag2 >= 0.13.4. Skill tools execute under `REQUEST`; your own `@inject` tools resolve normally alongside them.                                            |
+| Code-defined skills (`MemorySkill`)             | yes            | yes                     | yes                | yes                | ag2 >= 0.14.0. `@inject` skill scripts/resources resolve dependencies like any other tool; scripts run under `REQUEST` via `run_skill_script`.           |
 | `on_llm_call` middleware path                   | yes            | yes                     | yes                | yes                | `REQUEST` is opened for every model call.                                                                                                                |
 | HITL hooks (`hitl_hook=` / `@agent.hitl_hook`)  | yes            | yes                     | yes                | yes                | `HumanInputRequest` is available in `REQUEST` scope.                                                                                                     |
 | `@agent.prompt`                                 | yes            | yes                     | no                 | yes                | Dynamic prompts run before middleware is constructed. Use `dependencies={CONTAINER_NAME: container}` so `@inject` can open `REQUEST` from the container. |
@@ -43,6 +44,7 @@ See the examples directory for runnable examples:
 * `examples/ag2_subagents.py` - parent and child agents sharing one explicit `AG2Scope.CONVERSATION`.
 * `examples/ag2_toolkit.py` - AG2 `Toolkit` with injected tool functions.
 * `examples/ag2_skills.py` - agent skills (ag2 >= 0.13.4) loaded alongside an injected tool.
+* `examples/ag2_memory_skill.py` - code-defined `MemorySkill` (ag2 >= 0.14.0) with injected scripts and resources.
 
 ## Installation
 
@@ -415,6 +417,52 @@ agent = Agent(
 ```
 
 See `examples/ag2_skills.py` for a runnable example.
+
+### Code-defined skills (`MemorySkill`)
+
+> Requires `ag2 >= 0.14.0`.
+
+A `MemorySkill` defines a skill inline in code rather than on disk: its
+instructions, Resources and Scripts are in-memory values registered with
+`@skill.resource` / `@skill.script`. Each callable is wrapped with `tool()` and
+invoked through the same FastDepends path as any other tool, so an `@inject`
+script or resource resolves Dishka dependencies normally. Pass the skill (or the
+`MemoryRuntime` that owns it) straight to `SkillPlugin` (recommended) or
+`SkillsToolkit`; the model runs a script via `run_skill_script`, which executes
+under the `REQUEST` scope the middleware opens on `on_tool_execution`.
+
+`SkillPlugin` is the recommended way to attach skills: it injects the skill
+catalog into the system prompt (no `list_skills` round-trip) and registers only
+the activation tools the skills can actually use.
+
+```python
+from autogen.beta.tools.skills import MemorySkill, SkillPlugin
+
+skill = MemorySkill(
+    name="unit-converter",
+    description="Convert a value by multiplying it by a factor.",
+    instructions="Call the convert script with value and factor.",
+)
+
+
+@skill.script(description="Multiply value by factor.")
+@inject
+async def convert(
+    value: float,
+    factor: float,
+    request: FromDishka[ToolRequestState],  # fresh per run_skill_script call
+) -> str:
+    return str(value * factor)
+
+
+agent = Agent(
+    "assistant",
+    plugins=[SkillPlugin(skill)],  # a loose MemorySkill is wrapped automatically
+    middleware=[Middleware(DishkaAsyncMiddleware, container=container)],
+)
+```
+
+See `examples/ag2_memory_skill.py` for a runnable example.
 
 ## Conversation Scope and Subagents
 

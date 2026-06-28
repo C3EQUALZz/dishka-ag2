@@ -20,8 +20,8 @@ from dishka_ag2 import AG2Scope
 from tests.integration.scope_state import SessionState, ToolRequestState
 
 if TYPE_CHECKING:
-    from autogen.beta.agent import Plugin
     from autogen.beta.observers import Observer
+    from autogen.beta.plugin import Plugin
     from autogen.beta.tools import Toolkit
 
 AG2_VERSION = Version(version("ag2"))
@@ -79,10 +79,13 @@ def make_skill_plugin(skills_dir: Path) -> "Plugin":
 def tool_result_text(event: ToolResultEvent) -> str:
     """Extract textual payload from a ToolResultEvent across ag2 versions."""
     result = event.result
-    if hasattr(result, "parts"):
-        part = result.parts[0]
+    parts = getattr(result, "parts", None)
+    if parts:
+        part = parts[0]
         return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
-    return result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
+    if hasattr(result, "content"):
+        return result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
+    return str(result)
 
 
 def make_result_collector(sink: list[str]) -> "Observer":
