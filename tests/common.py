@@ -1,25 +1,17 @@
 import asyncio
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterable
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
-from typing import TYPE_CHECKING, Any, NewType
+from typing import Any, NewType
 from unittest.mock import Mock
 from uuid import UUID, uuid4
 
-from autogen.beta.context import Stream, SubId
-from autogen.beta.events import BaseEvent
-from autogen.beta.events.conditions import Condition
-from autogen.beta.types import ClassInfo
+from ag2.context import ConversationContext, Stream, SubId
+from ag2.events import BaseEvent, Input, ModelRequest
+from ag2.events.conditions import Condition
+from ag2.types import ClassInfo, SendableMessage
 from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope
-from dishka_ag2._compat import Context
-
-if TYPE_CHECKING:
-    # Added to the Stream protocol in ag2 0.13.4; only needed for type
-    # checking against the latest version. Older ag2 releases (run in the
-    # nox matrix) lack these names, so they must not be imported at runtime.
-    from autogen.beta.events import Input, ModelRequest
-    from autogen.beta.types import SendableMessage
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = AppDep("APP")
@@ -68,7 +60,7 @@ class AppProvider(Provider):
 
 class DummyStream(Stream):
     id: UUID = uuid4()
-    pending_messages: "list[ModelRequest]" = []  # noqa: RUF012
+    pending_messages: "list[ModelRequest]" = []  # ruff: ignore[mutable-class-default]
 
     def enqueue(
         self,
@@ -85,13 +77,13 @@ class DummyStream(Stream):
     async def send(
         self,
         event: BaseEvent,
-        context: Context,
+        context: ConversationContext,
     ) -> None:
         pass
 
     def where(
         self,
-        condition: ClassInfo | Condition,  # noqa: ARG002
+        condition: ClassInfo | Condition,  # ruff: ignore[unused-method-argument]
     ) -> "DummyStream":
         return self
 

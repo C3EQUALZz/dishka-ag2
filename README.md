@@ -6,8 +6,8 @@
 
 Though it is not required, you can use *dishka-ag2* integration. It features:
 
-* `AG2Scope.APP`, `AG2Scope.CONVERSATION`, `AG2Scope.SESSION` and `AG2Scope.REQUEST` scope management using AG2 beta middleware and `@inject`
-* `AG2Provider` for working with `BaseEvent`, `Context`, `ToolCallEvent` and `HumanInputRequest` in container
+* `AG2Scope.APP`, `AG2Scope.CONVERSATION`, `AG2Scope.SESSION` and `AG2Scope.REQUEST` scope management using AG2 middleware and `@inject`
+* `AG2Provider` for working with `BaseEvent`, `ConversationContext`, `ToolCallEvent` and `HumanInputRequest` in container
 * `ConversationAsyncContainer` and `ConversationContainer` injection for forwarding an open `AG2Scope.CONVERSATION` to nested `Agent.ask()` calls
 * Automatic injection of dependencies via `@inject` in supported AG2 hooks
 
@@ -27,8 +27,8 @@ Though it is not required, you can use *dishka-ag2* integration. It features:
 | `@agent.tool`                                   | yes            | yes                     | yes                | yes                | Main supported path for injected tools.                                                                                                                  |
 | standalone `@tool` in `Agent(..., tools=[...])` | yes            | yes                     | yes                | yes                | Same lifecycle as `@agent.tool`.                                                                                                                         |
 | `Toolkit` / custom `Tool` execution             | yes            | yes                     | yes                | yes                | Works for actual tool functions if the custom tool forwards `middleware` in `register()`.                                                                |
-| Agent skills (`SkillsToolkit` / `SkillPlugin`)  | yes            | yes                     | yes                | yes                | ag2 >= 0.13.4. Skill tools execute under `REQUEST`; your own `@inject` tools resolve normally alongside them.                                            |
-| Code-defined skills (`MemorySkill`)             | yes            | yes                     | yes                | yes                | ag2 >= 0.14.0. `@inject` skill scripts/resources resolve dependencies like any other tool; scripts run under `REQUEST` via `run_skill_script`.           |
+| Agent skills (`SkillsToolkit` / `SkillPlugin`)  | yes            | yes                     | yes                | yes                | Skill tools execute under `REQUEST`; your own `@inject` tools resolve normally alongside them.                                                           |
+| Code-defined skills (`MemorySkill`)             | yes            | yes                     | yes                | yes                | `@inject` skill scripts/resources resolve dependencies like any other tool; scripts run under `REQUEST` via `run_skill_script`.                          |
 | `on_llm_call` middleware path                   | yes            | yes                     | yes                | yes                | `REQUEST` is opened for every model call.                                                                                                                |
 | HITL hooks (`hitl_hook=` / `@agent.hitl_hook`)  | yes            | yes                     | yes                | yes                | `HumanInputRequest` is available in `REQUEST` scope.                                                                                                     |
 | `@agent.prompt`                                 | yes            | yes                     | no                 | yes                | Dynamic prompts run before middleware is constructed. Use `dependencies={CONTAINER_NAME: container}` so `@inject` can open `REQUEST` from the container. |
@@ -43,8 +43,8 @@ See the examples directory for runnable examples:
 * `examples/ag2_response_schema.py` - `response_schema` validators with injected APP/REQUEST dependencies.
 * `examples/ag2_subagents.py` - parent and child agents sharing one explicit `AG2Scope.CONVERSATION`.
 * `examples/ag2_toolkit.py` - AG2 `Toolkit` with injected tool functions.
-* `examples/ag2_skills.py` - agent skills (ag2 >= 0.13.4) loaded alongside an injected tool.
-* `examples/ag2_memory_skill.py` - code-defined `MemorySkill` (ag2 >= 0.14.0) with injected scripts and resources.
+* `examples/ag2_skills.py` - agent skills loaded alongside an injected tool.
+* `examples/ag2_memory_skill.py` - code-defined `MemorySkill` with injected scripts and resources.
 
 ## Installation
 
@@ -58,6 +58,27 @@ Or with `uv`
 
 ```sh
 uv add dishka-ag2
+```
+
+## Compatibility
+
+| `dishka-ag2` | `ag2`            | Import root      |
+|--------------|------------------|------------------|
+| `>= 1.0`     | `>= 1.0.1, < 2`  | `ag2`            |
+| `< 1.0`      | `>= 0.11.5, < 1` | `autogen.beta`   |
+
+`ag2` 1.0 graduated the beta API to the top-level `ag2` package and dropped
+`autogen.beta`. `dishka-ag2` 1.0 follows that move and supports `ag2 >= 1.0.1`
+only — there is no backwards compatibility with the `autogen.beta` import root.
+To migrate, replace every `autogen.beta` import prefix with `ag2`:
+
+```diff
+-from autogen.beta import Agent
+-from autogen.beta.events import ToolCallEvent
+-from autogen.beta.tools import tool
++from ag2 import Agent
++from ag2.events import ToolCallEvent
++from ag2.tools import tool
 ```
 
 ## How to use
@@ -77,12 +98,12 @@ from dishka_ag2 import (
 from dishka import make_async_container, Provider, provide
 ```
 
-2. Create provider. You can use `ToolCallEvent` or `HumanInputRequest` as factory parameters on `REQUEST` scope for tool/HITL requests, and `BaseEvent` / `Context` on `SESSION` scope.
+2. Create provider. You can use `ToolCallEvent` or `HumanInputRequest` as factory parameters on `REQUEST` scope for tool/HITL requests, and `BaseEvent` / `ConversationContext` on `SESSION` scope.
 
 For `@agent.prompt` and `response_schema` validators, `REQUEST` scope is also supported, but it is opened outside a tool/HITL event. Use request factories that do not require `ToolCallEvent` or `HumanInputRequest` in those paths.
 
 ```python
-from autogen.beta.events import HumanInputRequest, ToolCallEvent
+from ag2.events import HumanInputRequest, ToolCallEvent
 
 class MyProvider(Provider):
     @provide(scope=AG2Scope.APP)
@@ -128,8 +149,8 @@ async def greet_user(
 4. Setup dishka integration: create container with `AG2Provider()` and pass it to `DishkaAsyncMiddleware` or `DishkaSyncMiddleware` via `Middleware`
 
 ```python
-from autogen.beta import Agent
-from autogen.beta.middleware import Middleware
+from ag2 import Agent
+from ag2.middleware import Middleware
 
 container = make_async_container(MyProvider(), AG2Provider(), scopes=AG2Scope)
 
@@ -165,8 +186,8 @@ Both registration styles are supported:
 * `Agent(..., prompt=dynamic_prompt)` constructor argument
 
 ```python
-from autogen.beta import Agent, Context
-from autogen.beta.middleware import Middleware
+from ag2 import Agent, Context
+from ag2.middleware import Middleware
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (
@@ -233,7 +254,7 @@ agent = Agent(
 )
 ```
 
-Use request providers that match the prompt path. `Context` is available, but
+Use request providers that match the prompt path. `ConversationContext` is available, but
 there is no `ToolCallEvent` while a dynamic prompt is being built.
 
 ## Response Schemas
@@ -243,7 +264,7 @@ They run when AG2 validates the response content, so `@inject` opens a request
 scope around the validator call.
 
 ```python
-from autogen.beta import Agent, PromptedSchema, response_schema
+from ag2 import Agent, PromptedSchema, response_schema
 
 
 class ParserService:
@@ -288,7 +309,7 @@ Both registration styles are supported:
 * `Agent(..., hitl_hook=on_human_input)`
 
 ```python
-from autogen.beta.events import HumanInputRequest, HumanMessage
+from ag2.events import HumanInputRequest, HumanMessage
 
 
 class AuditProvider(Provider):
@@ -330,7 +351,7 @@ AG2 `Toolkit` works with injected tool functions. You can register functions
 with the decorator or pass them into `Toolkit(...)`.
 
 ```python
-from autogen.beta.tools import Toolkit
+from ag2.tools import Toolkit
 
 
 toolkit = Toolkit()
@@ -368,9 +389,7 @@ toolkit = Toolkit(get_weather)
 
 ## Skills
 
-> Requires `ag2 >= 0.13.4`.
-
-Agent skills (`autogen.beta.tools.skills`) are exposed to the model as ordinary
+Agent skills (`ag2.tools.skills`) are exposed to the model as ordinary
 local tools — `list_skills`, `load_skill`, `read_skill_resource` and
 `run_skill_script`. Because they execute through `on_tool_execution`, they run
 under the same `REQUEST` scope the middleware opens for any other tool call, so
@@ -379,8 +398,8 @@ nothing special is needed to use skills together with Dishka: your own
 while the skill tools run alongside them.
 
 ```python
-from autogen.beta.tools import tool
-from autogen.beta.tools.skills import LocalRuntime, SkillsToolkit
+from ag2.tools import tool
+from ag2.tools.skills import LocalRuntime, SkillsToolkit
 
 
 @tool
@@ -406,7 +425,7 @@ You can also use `SkillPlugin` to inject the skill catalog into the system
 prompt instead of exposing a `list_skills` tool:
 
 ```python
-from autogen.beta.tools.skills import SkillPlugin
+from ag2.tools.skills import SkillPlugin
 
 
 agent = Agent(
@@ -419,8 +438,6 @@ agent = Agent(
 See `examples/ag2_skills.py` for a runnable example.
 
 ### Code-defined skills (`MemorySkill`)
-
-> Requires `ag2 >= 0.14.0`.
 
 A `MemorySkill` defines a skill inline in code rather than on disk: its
 instructions, Resources and Scripts are in-memory values registered with
@@ -519,7 +536,7 @@ handles to the currently open conversation container. They do not replace
 | Type                         | Scope   | Description                                         |
 |------------------------------|---------|-----------------------------------------------------|
 | `BaseEvent`                  | SESSION | Initial event that started the turn                 |
-| `Context`                    | SESSION | AG2 context for the current turn                    |
+| `ConversationContext`        | SESSION | AG2 context for the current turn                    |
 | `ConversationAsyncContainer` | REQUEST | Async handle for the current CONVERSATION container |
 | `ConversationContainer`      | REQUEST | Sync handle for the current CONVERSATION container  |
 | `ToolCallEvent`              | REQUEST | Event for the current tool invocation               |
@@ -530,10 +547,10 @@ handles to the currently open conversation container. They do not replace
 ```python
 import asyncio
 
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.middleware import Middleware
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.events import ToolCallEvent
+from ag2.middleware import Middleware
+from ag2.testing import TestConfig
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (

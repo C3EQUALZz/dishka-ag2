@@ -1,9 +1,9 @@
 """Agent.ask() calls with sync container and separate SESSION/REQUEST scopes."""
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.events import ToolCallEvent
+from ag2.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import sync_env
@@ -104,7 +104,7 @@ async def test_agent_asks_use_separate_session_and_request_sync() -> None:
     assert child_request.tool_name == "child_lookup"
 
     assert {observation.app_id for observation in provider.observations} == {
-        provider._app.app_id,  # noqa: SLF001
+        provider._app.app_id,  # ruff: ignore[private-member-access]
     }
     assert [observation.agent_name for observation in provider.observations] == [
         "parent",

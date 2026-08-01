@@ -2,7 +2,7 @@ import inspect
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from autogen.beta.middleware import Middleware
+from ag2.middleware import Middleware
 from dishka import AsyncContainer, Container, make_async_container, make_container
 
 from dishka_ag2 import (

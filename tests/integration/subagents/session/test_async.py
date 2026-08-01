@@ -1,9 +1,9 @@
 """Nested Agent.ask() calls with separate SESSION and REQUEST scopes."""
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.events import ToolCallEvent
+from ag2.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import async_env
@@ -117,7 +117,7 @@ async def test_nested_agent_ask_uses_separate_session_and_request() -> None:
     assert child_request.tool_name == "child_lookup"
 
     assert {observation.app_id for observation in provider.observations} == {
-        provider._app.app_id,  # noqa: SLF001
+        provider._app.app_id,  # ruff: ignore[private-member-access]
     }
     assert [observation.agent_name for observation in provider.observations] == [
         "parent",

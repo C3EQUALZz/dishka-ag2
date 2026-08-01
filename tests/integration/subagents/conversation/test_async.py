@@ -1,9 +1,9 @@
 """Nested Agent.ask() calls with shared CONVERSATION scope."""
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.events import ToolCallEvent
+from ag2.testing import TestConfig
 
 from dishka_ag2 import (
     CONTAINER_NAME,
@@ -110,7 +110,7 @@ async def test_nested_agent_ask_can_share_explicit_conversation_scope() -> None:
     child_request = provider.requests["child"][0]
     conversation_id = provider.conversations[0]
 
-    assert provider.app_ids == [provider._app.app_id]  # noqa: SLF001
+    assert provider.app_ids == [provider._app.app_id]  # ruff: ignore[private-member-access]
     assert provider.conversations == [conversation_id]
     assert parent_session.conversation_id == conversation_id
     assert child_session.conversation_id == conversation_id

@@ -1,43 +1,21 @@
-"""Shared helpers for the agent-skills integration tests.
+"""Shared helpers for the agent-skills integration tests."""
 
-Agent skills (``autogen.beta.tools.skills``) were added in ag2 0.13.4. The
-``requires_skills`` marker skips the whole package on older releases (run in
-the nox matrix), and the ``SkillsToolkit`` import is guarded so importing this
-module never fails there.
-"""
-
-from importlib.metadata import version
 from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
-import pytest
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
+from ag2.events import ToolCallEvent, ToolResultEvent
+from ag2.observers import observer
+from ag2.tools.skills import LocalRuntime, SkillPlugin, SkillsToolkit
 from dishka import Provider, provide
-from packaging.version import Version
 
 from dishka_ag2 import AG2Scope
 from tests.integration.scope_state import SessionState, ToolRequestState
 
 if TYPE_CHECKING:
-    from autogen.beta.observers import Observer
-    from autogen.beta.plugin import Plugin
-    from autogen.beta.tools import Toolkit
-
-AG2_VERSION = Version(version("ag2"))
-SKILLS_MIN_VERSION = Version("0.13.4")
-SKILLS_AVAILABLE = AG2_VERSION >= SKILLS_MIN_VERSION
-
-requires_skills = pytest.mark.skipif(
-    not SKILLS_AVAILABLE,
-    reason=f"agent skills require ag2 >= {SKILLS_MIN_VERSION} (running {AG2_VERSION})",
-)
-
-if SKILLS_AVAILABLE:
-    # ``autogen.beta.observers`` is also new in 0.13.4, so it must stay behind
-    # the version guard or older nox-matrix runs fail to import this module.
-    from autogen.beta.observers import observer
-    from autogen.beta.tools.skills import LocalRuntime, SkillPlugin, SkillsToolkit
+    from ag2.observers import Observer
+    from ag2.plugin import Plugin
+    from ag2.tools import Toolkit
 
 SKILL_NAME = "greeting"
 SKILL_DESCRIPTION = "Produce a friendly greeting for a given person."
@@ -67,25 +45,22 @@ def write_skill(skills_dir: Path) -> Path:
 
 
 def make_skills_toolkit(skills_dir: Path) -> "Toolkit":
-    """Build a SkillsToolkit rooted at ``skills_dir`` (ag2 >= 0.13.4 only)."""
+    """Build a SkillsToolkit rooted at ``skills_dir``."""
     return SkillsToolkit(LocalRuntime(str(skills_dir)))
 
 
 def make_skill_plugin(skills_dir: Path) -> "Plugin":
-    """Build a SkillPlugin rooted at ``skills_dir`` (ag2 >= 0.13.4 only)."""
+    """Build a SkillPlugin rooted at ``skills_dir``."""
     return SkillPlugin(str(skills_dir))
 
 
 def tool_result_text(event: ToolResultEvent) -> str:
-    """Extract textual payload from a ToolResultEvent across ag2 versions."""
+    """Extract the textual payload from a ToolResultEvent."""
     result = event.result
-    parts = getattr(result, "parts", None)
-    if parts:
-        part = parts[0]
-        return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
-    if hasattr(result, "content"):
-        return result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
-    return str(result)
+    if not result.parts:
+        return str(result)
+    part = result.parts[0]
+    return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
 
 
 def make_result_collector(sink: list[str]) -> "Observer":

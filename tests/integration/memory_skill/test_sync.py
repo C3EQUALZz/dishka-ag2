@@ -6,8 +6,8 @@ dependencies on each call while ``SESSION`` stays shared across the turn.
 """
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.testing import TestConfig
 
 from tests.integration.conftest import sync_env
 from tests.integration.memory_skill.common import (
@@ -18,11 +18,8 @@ from tests.integration.memory_skill.common import (
     load_skill_call,
     make_result_collector,
     make_skills_toolkit,
-    requires_memory_skill,
     run_script_call,
 )
-
-pytestmark = requires_memory_skill
 
 
 @pytest.mark.asyncio()

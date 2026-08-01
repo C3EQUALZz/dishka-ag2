@@ -1,9 +1,9 @@
 """CONVERSATION scope handle injection with sync Dishka container."""
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.events import ToolCallEvent
+from ag2.testing import TestConfig
 
 from dishka_ag2 import (
     CONTAINER_NAME,

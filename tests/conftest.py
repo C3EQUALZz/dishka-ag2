@@ -1,51 +1,36 @@
 import pytest
-from autogen.beta.events import (
+from ag2.context import ConversationContext
+from ag2.events import (
     HumanInputRequest,
+    ModelMessage,
     ModelRequest,
     ModelResponse,
     ToolCallEvent,
     ToolResultEvent,
 )
 
-from dishka_ag2._compat import Context
 from tests.common import AppProvider, DummyStream
 
-try:
-    from autogen.beta.events import ModelMessage
 
-    def make_model_response(content: str) -> ModelResponse:
-        return ModelResponse(message=ModelMessage(content=content))
+def make_model_response(content: str) -> ModelResponse:
+    return ModelResponse(message=ModelMessage(content=content))
 
-    def response_content(response: ModelResponse) -> str:
-        return response.message.content  # type: ignore[union-attr]
 
-except ImportError:  # pragma: no cover - ag2 < 0.12
-
-    def make_model_response(content: str) -> ModelResponse:
-        return ModelResponse(message=content)  # type: ignore[arg-type]
-
-    def response_content(response: ModelResponse) -> str:
-        return response.message  # type: ignore[return-value]
+def response_content(response: ModelResponse) -> str:
+    return response.message.content  # type: ignore[union-attr]
 
 
 def tool_result_content(event: ToolResultEvent) -> str:
-    """Extract textual payload from a ToolResultEvent across ag2 versions.
-
-    ag2 <= 0.12.0 stored the value on ``ToolResult.content``;
-    ag2 >= 0.12.1 wraps it as ``TextInput`` inside ``ToolResult.parts``.
-    """
+    """Extract the textual payload from a ToolResultEvent."""
     tool_result = event.result
-    parts = getattr(tool_result, "parts", None)
-    if parts:
-        part = parts[0]
-        return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
-    if hasattr(tool_result, "content"):
-        return tool_result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
-    return str(tool_result)
+    if not tool_result.parts:
+        return str(tool_result)
+    part = tool_result.parts[0]
+    return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
 
 
-def make_context() -> Context:
-    return Context(stream=DummyStream())
+def make_context() -> ConversationContext:
+    return ConversationContext(stream=DummyStream())
 
 
 def make_tool_call(
@@ -62,9 +47,7 @@ def make_human_input_request(
 
 
 def make_llm_events() -> list[ModelRequest]:
-    if hasattr(ModelRequest, "ensure_request"):
-        return [ModelRequest.ensure_request(["Hello"])]
-    return [ModelRequest(content="Hello")]  # type: ignore[call-arg]  # ag2 < 0.12
+    return [ModelRequest.ensure_request(["Hello"])]
 
 
 @pytest.fixture()

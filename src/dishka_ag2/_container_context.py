@@ -2,9 +2,9 @@ from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager, contextmanager
 from typing import Any
 
+from ag2.context import ConversationContext
 from dishka import AsyncContainer, Container
 
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import (
     CONTAINER_NAME,
     PENDING_REQUEST_CONTEXT,
@@ -17,7 +17,7 @@ from dishka_ag2._types import ConversationAsyncContainer, ConversationContainer
 
 @asynccontextmanager
 async def async_session_scope(
-    context: Context,
+    context: ConversationContext,
     context_data: dict[Any, Any],
 ) -> AsyncIterator[None]:
     previous_current = context.dependencies[CONTAINER_NAME]
@@ -37,7 +37,7 @@ async def async_session_scope(
 
 @contextmanager
 def sync_session_scope(
-    context: Context,
+    context: ConversationContext,
     context_data: dict[Any, Any],
 ) -> Iterator[None]:
     previous_current = context.dependencies[CONTAINER_NAME]
@@ -57,7 +57,7 @@ def sync_session_scope(
 
 @asynccontextmanager
 async def async_request_scope(
-    context: Context,
+    context: ConversationContext,
     root: AsyncContainer,
     context_data: dict[Any, Any],
 ) -> AsyncIterator[None]:
@@ -84,7 +84,7 @@ async def async_request_scope(
 
 @contextmanager
 def sync_request_scope(
-    context: Context,
+    context: ConversationContext,
     root: Container,
     context_data: dict[Any, Any],
 ) -> Iterator[None]:
@@ -110,7 +110,7 @@ def sync_request_scope(
 
 @contextmanager
 def stash_request_context(
-    context: Context,
+    context: ConversationContext,
     context_data: dict[Any, Any],
 ) -> Iterator[None]:
     previous = context.dependencies.get(PENDING_REQUEST_CONTEXT)

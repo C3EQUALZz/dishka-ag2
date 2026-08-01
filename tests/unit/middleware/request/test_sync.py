@@ -4,7 +4,8 @@ from collections.abc import Sequence
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta.events import (
+from ag2.context import ConversationContext
+from ag2.events import (
     BaseEvent,
     HumanInputRequest,
     HumanMessage,
@@ -15,7 +16,6 @@ from autogen.beta.events import (
 from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME, PENDING_REQUEST_CONTEXT
 from tests.common import REQUEST_DEP_VALUE, AppProvider, RequestDep
 from tests.conftest import (
@@ -41,7 +41,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -52,7 +52,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
@@ -79,7 +79,7 @@ async def test_injection_uses_positional_context(
 
         @inject
         def handle(
-            context: Context,
+            context: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -90,7 +90,7 @@ async def test_injection_uses_positional_context(
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
@@ -114,7 +114,7 @@ async def test_request_scope_per_tool_call(
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -128,7 +128,7 @@ async def test_request_scope_per_tool_call(
 
             async def call_next(
                 ev: ToolCallEvent,
-                ctx: Context,
+                ctx: ConversationContext,
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,
@@ -155,10 +155,10 @@ async def test_tool_execution_stashes_and_clears_pending_context(
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             pending = ctx.dependencies[PENDING_REQUEST_CONTEXT]
-            assert pending[Context] is ctx
+            assert pending[ConversationContext] is ctx
             assert pending[ToolCallEvent] is ev
             return ToolResultEvent.from_call(ev, result="ok")
 
@@ -170,7 +170,7 @@ async def test_tool_execution_stashes_and_clears_pending_context(
 async def test_missing_container_raises() -> None:
     @inject
     def handle(
-        ctx: Context,
+        ctx: ConversationContext,
         request_dep: FromDishka[RequestDep],
     ) -> str:
         _ = ctx
@@ -196,7 +196,7 @@ async def test_inject_request_cleanup_on_exception(
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
         ) -> None:
             _ = (ctx, request_dep)
@@ -223,7 +223,7 @@ async def test_llm_call_request_dependency(
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -234,7 +234,7 @@ async def test_llm_call_request_dependency(
 
         async def call_next(
             evs: Sequence[BaseEvent],
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             result = handle(ctx)
             return make_model_response(result)
@@ -258,7 +258,7 @@ async def test_human_input_request_dependency(
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -269,7 +269,7 @@ async def test_human_input_request_dependency(
 
         async def call_next(
             ev: HumanInputRequest,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> HumanMessage:
             handle(ctx)
             return HumanMessage(content="yes")
@@ -297,7 +297,7 @@ async def test_human_input_provides_event(
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             hi_request: FromDishka[HumanInputRequest],
         ) -> str:
             _ = ctx
@@ -307,7 +307,7 @@ async def test_human_input_provides_event(
 
         async def call_next(
             ev: HumanInputRequest,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> HumanMessage:
             content: str = handle(ctx)
             return HumanMessage(content=content)

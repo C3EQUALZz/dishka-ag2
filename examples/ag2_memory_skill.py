@@ -1,6 +1,6 @@
 """Example: a code-defined ``MemorySkill`` with Dishka-injected scripts.
 
-``MemorySkill`` (``autogen.beta.tools.skills``, ag2 >= 0.14.0) defines a skill
+``MemorySkill`` (``ag2.tools.skills``) defines a skill
 inline in code instead of on disk: its instructions, Resources and Scripts are
 in-memory values registered with ``@skill.resource`` / ``@skill.script``.
 
@@ -24,12 +24,12 @@ from dataclasses import dataclass, field
 from typing import NewType
 from uuid import UUID, uuid4
 
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
-from autogen.beta.middleware import Middleware
-from autogen.beta.observers import observer
-from autogen.beta.testing import TestConfig
-from autogen.beta.tools.skills import MemorySkill, SkillPlugin
+from ag2 import Agent
+from ag2.events import ToolCallEvent, ToolResultEvent
+from ag2.middleware import Middleware
+from ag2.observers import observer
+from ag2.testing import TestConfig
+from ag2.tools.skills import MemorySkill, SkillPlugin
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (

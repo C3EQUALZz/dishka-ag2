@@ -1,6 +1,6 @@
 from unittest.mock import Mock
 
-from autogen.beta.events import ToolCallEvent
+from ag2.events import ToolCallEvent
 from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope

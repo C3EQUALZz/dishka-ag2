@@ -1,54 +1,29 @@
 """Shared helpers for the code-defined ``MemorySkill`` integration tests.
 
-``MemorySkill`` / ``MemoryRuntime`` (``autogen.beta.tools.skills``) were added
-in ag2 0.14.0: a skill is defined inline in code, carrying its instructions,
+A ``MemorySkill`` is defined inline in code, carrying its instructions,
 Resources and Scripts as in-memory values instead of files on disk. Scripts and
 Resources are wrapped with ``tool()`` and invoked through the same FastDepends
-path as any other tool, threading the live ``Context`` -- so an ``@inject``
-script/resource resolves Dishka dependencies exactly like a regular tool does.
-
-The ``requires_memory_skill`` marker skips the whole package on older releases
-(run in the nox matrix), and every ``MemorySkill`` import is guarded so importing
-this module never fails there.
+path as any other tool, threading the live ``ConversationContext`` -- so an
+``@inject`` script/resource resolves Dishka dependencies exactly like a regular
+tool does.
 """
 
 from dataclasses import dataclass, field
-from importlib.metadata import version
 from typing import TYPE_CHECKING, NewType
 from uuid import UUID
 
-import pytest
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
+from ag2.events import ToolCallEvent, ToolResultEvent
+from ag2.observers import observer
+from ag2.tools.skills import MemorySkill, SkillPlugin, SkillsToolkit
 from dishka import Provider, provide
-from packaging.version import Version
 
 from dishka_ag2 import AG2Scope, FromDishka, inject
 from tests.integration.scope_state import SessionState, ToolRequestState
 
 if TYPE_CHECKING:
-    from autogen.beta.observers import Observer
-    from autogen.beta.plugin import Plugin
-    from autogen.beta.tools import Toolkit
-    from autogen.beta.tools.skills import MemorySkill
-
-AG2_VERSION = Version(version("ag2"))
-MEMORY_SKILL_MIN_VERSION = Version("0.14.0")
-MEMORY_SKILL_AVAILABLE = AG2_VERSION >= MEMORY_SKILL_MIN_VERSION
-
-SKIP_REASON = (
-    f"MemorySkill requires ag2 >= {MEMORY_SKILL_MIN_VERSION} (running {AG2_VERSION})"
-)
-requires_memory_skill = pytest.mark.skipif(
-    not MEMORY_SKILL_AVAILABLE,
-    reason=SKIP_REASON,
-)
-
-if MEMORY_SKILL_AVAILABLE:
-    # The skills package is also restructured in 0.14.0, so every import here
-    # must stay behind the version guard or older nox-matrix runs fail to import
-    # this module.
-    from autogen.beta.observers import observer
-    from autogen.beta.tools.skills import MemorySkill, SkillPlugin, SkillsToolkit
+    from ag2.observers import Observer
+    from ag2.plugin import Plugin
+    from ag2.tools import Toolkit
 
 AppLabel = NewType("AppLabel", str)
 APP_LABEL_VALUE = AppLabel("memory-skill-app")
@@ -131,12 +106,12 @@ def build_sync_skill(records: ScriptRecords) -> "MemorySkill":
 
 
 def make_skills_toolkit(skill: "MemorySkill") -> "Toolkit":
-    """Wrap a code-defined skill in a SkillsToolkit (ag2 >= 0.14.0 only)."""
+    """Wrap a code-defined skill in a SkillsToolkit."""
     return SkillsToolkit(skill)
 
 
 def make_skill_plugin(skill: "MemorySkill") -> "Plugin":
-    """Wrap a code-defined skill in a SkillPlugin (ag2 >= 0.14.0 only)."""
+    """Wrap a code-defined skill in a SkillPlugin."""
     return SkillPlugin(skill)
 
 
@@ -161,15 +136,12 @@ def read_resource_call(resource: str) -> ToolCallEvent:
 
 
 def tool_result_text(event: ToolResultEvent) -> str:
-    """Extract textual payload from a ToolResultEvent across ag2 versions."""
+    """Extract the textual payload from a ToolResultEvent."""
     result = event.result
-    parts = getattr(result, "parts", None)
-    if parts:
-        part = parts[0]
-        return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
-    if hasattr(result, "content"):
-        return result.content  # type: ignore[no-any-return,attr-defined,unused-ignore]
-    return str(result)
+    if not result.parts:
+        return str(result)
+    part = result.parts[0]
+    return part.content if hasattr(part, "content") else str(part)  # type: ignore[no-any-return,unused-ignore]
 
 
 def make_result_collector(sink: list[str]) -> "Observer":

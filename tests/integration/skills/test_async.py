@@ -1,6 +1,6 @@
 """Agent skills + Dishka with an async container.
 
-Skills (``autogen.beta.tools.skills``, ag2 >= 0.13.4) run as ordinary local
+Skills (``ag2.tools.skills``) run as ordinary local
 tools, so they execute under the REQUEST scope opened by the middleware on
 ``on_tool_execution``. These tests prove the integration holds: a skill tool
 (``load_skill``) executes successfully while a user's own ``@inject`` tool
@@ -11,10 +11,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.testing import TestConfig
-from autogen.beta.tools import tool
+from ag2 import Agent
+from ag2.events import ToolCallEvent
+from ag2.testing import TestConfig
+from ag2.tools import tool
 
 from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import async_env
@@ -26,13 +26,10 @@ from tests.integration.skills.common import (
     make_result_collector,
     make_skill_plugin,
     make_skills_toolkit,
-    requires_skills,
 )
 
 if TYPE_CHECKING:
     from uuid import UUID
-
-pytestmark = requires_skills
 
 
 @pytest.mark.asyncio()

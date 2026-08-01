@@ -4,10 +4,10 @@ from typing import TYPE_CHECKING
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
+from ag2.context import ConversationContext
+from ag2.events import ToolCallEvent, ToolResultEvent
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._compat import Context
 from tests.common import APP_DEP_VALUE, AppDep, AppMock, AppProvider
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env
@@ -27,19 +27,19 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             app_dep: FromDishka[AppDep],
             mock: FromDishka[Mock],
         ) -> str:
             mock(app_dep)
             return "ok"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
@@ -65,14 +65,14 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             app_mock: FromDishka[AppMock],
         ) -> str:
             _ = ctx
             app_mocks.append(app_mock)
             return "ok"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
 
         for _ in range(2):
             context = make_context()
@@ -81,7 +81,7 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
 
             async def call_next(
                 ev: ToolCallEvent,
-                ctx: Context,
+                ctx: ConversationContext,
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,

@@ -3,11 +3,11 @@
 from typing import TYPE_CHECKING
 
 import pytest
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
+from ag2.context import ConversationContext
+from ag2.events import ToolCallEvent, ToolResultEvent
 from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._compat import Context
 from tests.common import AppDep, AppProvider
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env
@@ -27,20 +27,20 @@ async def test_async_tool_with_sync_container_raises(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             app_dep: FromDishka[AppDep],
         ) -> str:
             _ = ctx
             return str(app_dep)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         context = make_context()
         event = make_tool_call()
         instance = middleware(event, context)
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             result: str = await typed_handle(ctx)
 
@@ -71,7 +71,7 @@ async def test_sync_tool_with_async_container_raises(
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             app_dep: FromDishka[AppDep],
         ) -> str:
             _ = ctx
@@ -83,7 +83,7 @@ async def test_sync_tool_with_async_container_raises(
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
@@ -105,13 +105,13 @@ async def test_sync_tool_with_async_container_raises(
 async def test_missing_middleware_raises() -> None:
     @inject
     async def handle(
-        ctx: Context,
+        ctx: ConversationContext,
         app_dep: FromDishka[AppDep],
     ) -> str:
         _ = ctx
         return str(app_dep)
 
-    typed_handle: Callable[[Context], Awaitable[str]] = handle
+    typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
     context = make_context()
 
     with pytest.raises((DishkaError, KeyError)):

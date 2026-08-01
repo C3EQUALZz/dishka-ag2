@@ -3,9 +3,9 @@ from collections.abc import Awaitable, Callable
 from functools import wraps
 from typing import Any, overload
 
+from ag2.context import ConversationContext
 from dishka.integrations.base import wrap_injection
 
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import PENDING_REQUEST_CONTEXT
 from dishka_ag2._container import (
     get_async_container_from_context,
@@ -17,11 +17,11 @@ from dishka_ag2._context_getter import build_context_getter
 from dishka_ag2._types import ParamsP, ReturnT
 
 
-def _request_context_data(context: Context) -> dict[Any, Any]:
+def _request_context_data(context: ConversationContext) -> dict[Any, Any]:
     pending: dict[Any, Any] | None = context.dependencies.get(
         PENDING_REQUEST_CONTEXT,
     )
-    return pending if pending is not None else {Context: context}
+    return pending if pending is not None else {ConversationContext: context}
 
 
 def inject_async(

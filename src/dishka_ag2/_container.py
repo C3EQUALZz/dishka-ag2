@@ -1,14 +1,14 @@
+from ag2.context import ConversationContext
 from dishka import AsyncContainer, Container
 from dishka.exception_base import DishkaError
 
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._scope import AG2Scope
 from dishka_ag2._types import ContainerT
 
 
 def _get_container_from_context(
-    context: Context,
+    context: ConversationContext,
     container_type: type[ContainerT],
 ) -> ContainerT:
     try:
@@ -26,11 +26,11 @@ def _get_container_from_context(
     return container
 
 
-def get_async_container_from_context(context: Context) -> AsyncContainer:
+def get_async_container_from_context(context: ConversationContext) -> AsyncContainer:
     return _get_container_from_context(context, AsyncContainer)
 
 
-def get_sync_container_from_context(context: Context) -> Container:
+def get_sync_container_from_context(context: ConversationContext) -> Container:
     return _get_container_from_context(context, Container)
 
 

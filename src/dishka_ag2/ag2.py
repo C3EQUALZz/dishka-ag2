@@ -9,10 +9,10 @@ __all__ = (
     "inject",
 )
 
-from autogen.beta.events import BaseEvent, HumanInputRequest, ToolCallEvent
+from ag2.context import ConversationContext
+from ag2.events import BaseEvent, HumanInputRequest, ToolCallEvent
 from dishka import Provider, from_context
 
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._injectors import inject
 from dishka_ag2._middleware import DishkaAsyncMiddleware, DishkaSyncMiddleware
@@ -22,7 +22,7 @@ from dishka_ag2._types import ConversationAsyncContainer, ConversationContainer
 
 class AG2Provider(Provider):
     event = from_context(BaseEvent, scope=AG2Scope.SESSION)
-    context = from_context(Context, scope=AG2Scope.SESSION)
+    context = from_context(ConversationContext, scope=AG2Scope.SESSION)
     conversation_async_container = from_context(
         ConversationAsyncContainer,
         scope=AG2Scope.REQUEST,

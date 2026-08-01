@@ -3,7 +3,8 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any, cast, get_type_hints
 
-from dishka_ag2._compat import Context
+from ag2.context import ConversationContext
+
 from dishka_ag2._consts import CONTEXT_PARAM
 
 
@@ -16,12 +17,12 @@ class ContextGetter:
         self,
         args: tuple[Any, ...],
         kwargs: dict[str, Any],
-    ) -> Context:
-        found: Context | None = kwargs.get(self.param_name)
+    ) -> ConversationContext:
+        found: ConversationContext | None = kwargs.get(self.param_name)
         if found is not None:
             return found
         bound = self.signature.bind_partial(*args, **kwargs).arguments
-        return cast("Context", bound[self.param_name])
+        return cast("ConversationContext", bound[self.param_name])
 
 
 def build_context_getter(
@@ -30,7 +31,7 @@ def build_context_getter(
     signature = inspect.signature(func)
     hints = get_type_hints(func)
     existing = next(
-        (name for name, hint in hints.items() if hint is Context),
+        (name for name, hint in hints.items() if hint is ConversationContext),
         None,
     )
     if existing is not None:

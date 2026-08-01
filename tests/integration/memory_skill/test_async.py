@@ -9,8 +9,8 @@ and that an ``@inject`` Resource resolves an ``APP`` dep on ``read_skill_resourc
 """
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.testing import TestConfig
 
 from tests.integration.conftest import async_env
 from tests.integration.memory_skill.common import (
@@ -24,11 +24,8 @@ from tests.integration.memory_skill.common import (
     make_skill_plugin,
     make_skills_toolkit,
     read_resource_call,
-    requires_memory_skill,
     run_script_call,
 )
-
-pytestmark = requires_memory_skill
 
 
 @pytest.mark.asyncio()

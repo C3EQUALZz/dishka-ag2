@@ -1,8 +1,8 @@
 """@response_schema with sync Dishka middleware."""
 
 import pytest
-from autogen.beta import Agent, PromptedSchema, response_schema
-from autogen.beta.testing import TestConfig
+from ag2 import Agent, PromptedSchema, response_schema
+from ag2.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.common import REQUEST_DEP_VALUE, AppProvider, RequestDep

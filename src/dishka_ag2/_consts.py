@@ -1,7 +1,7 @@
 from inspect import Parameter
 from typing import Final
 
-from autogen.beta.annotations import Context
+from ag2.annotations import Context
 
 CONTAINER_NAME: Final[str] = "dishka_container"
 SESSION_CONTAINER_NAME: Final[str] = "dishka_session_container"

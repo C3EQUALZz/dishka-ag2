@@ -4,7 +4,8 @@ from collections.abc import Awaitable, Callable, Sequence
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta.events import (
+from ag2.context import ConversationContext
+from ag2.events import (
     BaseEvent,
     HumanInputRequest,
     HumanMessage,
@@ -15,7 +16,6 @@ from autogen.beta.events import (
 from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME, PENDING_REQUEST_CONTEXT
 from tests.common import REQUEST_DEP_VALUE, AppProvider, RequestDep
 from tests.conftest import (
@@ -41,19 +41,19 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
             mock(request_dep)
             return "ok"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             res: str = await typed_handle(ctx)
 
@@ -82,19 +82,19 @@ async def test_injection_uses_positional_context(
 
         @inject
         async def handle(
-            context: Context,
+            context: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
             mock(request_dep)
             return str(context.variables)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
@@ -118,14 +118,14 @@ async def test_request_scope_per_tool_call(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
             mock(request_dep)
             return "ok"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
 
         for _ in range(2):
             context = make_context()
@@ -134,7 +134,7 @@ async def test_request_scope_per_tool_call(
 
             async def call_next(
                 ev: ToolCallEvent,
-                ctx: Context,
+                ctx: ConversationContext,
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,
@@ -161,10 +161,10 @@ async def test_tool_execution_stashes_and_clears_pending_context(
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             pending = ctx.dependencies[PENDING_REQUEST_CONTEXT]
-            assert pending[Context] is ctx
+            assert pending[ConversationContext] is ctx
             assert pending[ToolCallEvent] is ev
             return ToolResultEvent.from_call(ev, result="ok")
 
@@ -176,13 +176,13 @@ async def test_tool_execution_stashes_and_clears_pending_context(
 async def test_missing_container_raises() -> None:
     @inject
     async def handle(
-        ctx: Context,
+        ctx: ConversationContext,
         request_dep: FromDishka[RequestDep],
     ) -> str:
         _ = ctx
         return str(request_dep)
 
-    typed_handle: Callable[[Context], Awaitable[str]] = handle
+    typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
     context = make_context()
 
     with pytest.raises(DishkaError, match="Dishka container not found"):
@@ -203,13 +203,13 @@ async def test_inject_request_cleanup_on_exception(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
         ) -> None:
             _ = (ctx, request_dep)
             raise RuntimeError("boom")
 
-        typed_handle: Callable[[Context], Awaitable[None]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[None]] = handle
 
         with pytest.raises(RuntimeError, match="boom"):
             await typed_handle(context)
@@ -232,19 +232,19 @@ async def test_llm_call_request_dependency(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
             mock(request_dep)
             return "ok"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def call_next(
             evs: Sequence[BaseEvent],
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             result = await typed_handle(ctx)
             return make_model_response(result)
@@ -269,19 +269,19 @@ async def test_human_input_request_dependency(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             request_dep: FromDishka[RequestDep],
             mock: FromDishka[Mock],
         ) -> str:
             mock(request_dep)
             return "yes"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def call_next(
             ev: HumanInputRequest,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> HumanMessage:
             await typed_handle(ctx)
             return HumanMessage(content="yes")
@@ -310,18 +310,18 @@ async def test_human_input_provides_event(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             hi_request: FromDishka[HumanInputRequest],
         ) -> str:
             _ = ctx
             return str(hi_request.content)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def call_next(
             ev: HumanInputRequest,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> HumanMessage:
             content = await typed_handle(ctx)
             return HumanMessage(content=content)

@@ -3,7 +3,8 @@
 from collections.abc import Awaitable, Callable, Sequence
 
 import pytest
-from autogen.beta.events import (
+from ag2.context import ConversationContext
+from ag2.events import (
     BaseEvent,
     HumanInputRequest,
     HumanMessage,
@@ -13,7 +14,6 @@ from autogen.beta.events import (
 )
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME, SESSION_CONTAINER_NAME
 from tests.common import (
     SESSION_DEP_VALUE,
@@ -44,18 +44,18 @@ async def test_session_scope_via_on_turn(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             session_dep: FromDishka[SessionDep],
         ) -> str:
             _ = ctx
             return str(session_dep)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             result = await typed_handle(ctx)
             assert result == str(SESSION_DEP_VALUE)
@@ -80,7 +80,7 @@ async def test_session_shared_across_tool_calls(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             session_dep: FromDishka[SessionDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:
@@ -88,19 +88,19 @@ async def test_session_shared_across_tool_calls(
             session_deps.append(session_dep)
             return str(request_dep)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             for _ in range(2):
                 tool_event = make_tool_call()
 
                 async def call_next(
                     tool_ev: ToolCallEvent,
-                    tool_ctx: Context,
+                    tool_ctx: ConversationContext,
                 ) -> ToolResultEvent:
                     return ToolResultEvent.from_call(
                         tool_ev,
@@ -136,7 +136,7 @@ async def test_session_container_restored_to_root(
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             assert ctx.dependencies[CONTAINER_NAME] is not root
             return make_model_response("ok")
@@ -159,7 +159,7 @@ async def test_session_scope_cleanup_on_exception(
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             await ctx.dependencies[CONTAINER_NAME].get(SessionDep)
             raise RuntimeError("boom")
@@ -188,18 +188,18 @@ async def test_base_event_injected_at_session(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             turn_event: FromDishka[BaseEvent],
         ) -> str:
             _ = ctx
             captured.append(turn_event)
             return "ok"
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             result: str = await typed_handle(ctx)
             return make_model_response(result)
@@ -225,7 +225,7 @@ async def test_llm_call_uses_session_container(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             session_dep: FromDishka[SessionDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:
@@ -233,18 +233,18 @@ async def test_llm_call_uses_session_container(
             session_deps.append(session_dep)
             return str(request_dep)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             events = make_llm_events()
 
             async def llm_call_next(
                 evs: Sequence[BaseEvent],
-                llm_ctx: Context,
+                llm_ctx: ConversationContext,
             ) -> ModelResponse:
                 await typed_handle(llm_ctx)
                 return make_model_response("ok")
@@ -255,7 +255,7 @@ async def test_llm_call_uses_session_container(
 
             async def tool_call_next(
                 tool_ev: ToolCallEvent,
-                tool_ctx: Context,
+                tool_ctx: ConversationContext,
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     tool_ev,
@@ -292,7 +292,7 @@ async def test_human_input_uses_session_container(
 
         @inject
         async def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             session_dep: FromDishka[SessionDep],
             request_dep: FromDishka[RequestDep],
         ) -> str:
@@ -300,18 +300,18 @@ async def test_human_input_uses_session_container(
             session_deps.append(session_dep)
             return str(request_dep)
 
-        typed_handle: Callable[[Context], Awaitable[str]] = handle
+        typed_handle: Callable[[ConversationContext], Awaitable[str]] = handle
         instance = middleware(event, context)
 
         async def turn_body(
             ev: BaseEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ModelResponse:
             human_event = make_human_input_request()
 
             async def human_call_next(
                 hi_ev: HumanInputRequest,
-                hi_ctx: Context,
+                hi_ctx: ConversationContext,
             ) -> HumanMessage:
                 await typed_handle(hi_ctx)
                 return HumanMessage(content="ok")
@@ -326,7 +326,7 @@ async def test_human_input_uses_session_container(
 
             async def tool_call_next(
                 tool_ev: ToolCallEvent,
-                tool_ctx: Context,
+                tool_ctx: ConversationContext,
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     tool_ev,

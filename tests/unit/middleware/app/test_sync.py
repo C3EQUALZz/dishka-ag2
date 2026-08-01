@@ -3,10 +3,10 @@
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
+from ag2.context import ConversationContext
+from ag2.events import ToolCallEvent, ToolResultEvent
 
 from dishka_ag2 import FromDishka, inject
-from dishka_ag2._compat import Context
 from tests.common import APP_DEP_VALUE, AppDep, AppMock, AppProvider
 from tests.conftest import make_context, make_tool_call
 from tests.unit.conftest import create_ag2_env
@@ -23,7 +23,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             app_dep: FromDishka[AppDep],
             mock: FromDishka[Mock],
         ) -> str:
@@ -34,7 +34,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
 
         async def call_next(
             ev: ToolCallEvent,
-            ctx: Context,
+            ctx: ConversationContext,
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
@@ -60,7 +60,7 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
 
         @inject
         def handle(
-            ctx: Context,
+            ctx: ConversationContext,
             app_mock: FromDishka[AppMock],
         ) -> str:
             _ = ctx
@@ -74,7 +74,7 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
 
             async def call_next(
                 ev: ToolCallEvent,
-                ctx: Context,
+                ctx: ConversationContext,
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,

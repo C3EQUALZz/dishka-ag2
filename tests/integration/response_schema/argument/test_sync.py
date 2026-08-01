@@ -1,9 +1,9 @@
 """Agent(..., response_schema=...) with sync Dishka middleware."""
 
 import pytest
-from autogen.beta import Agent, PromptedSchema, ResponseSchema
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent, PromptedSchema, ResponseSchema
+from ag2.events import ToolCallEvent
+from ag2.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.common import APP_DEP_VALUE, REQUEST_DEP_VALUE, AppDep, AppProvider, RequestDep

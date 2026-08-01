@@ -4,7 +4,7 @@ Guidance for coding agents working in this repository.
 
 ## Project Summary
 
-`dishka-ag2` integrates Dishka dependency injection with AG2 beta agents.
+`dishka-ag2` integrates Dishka dependency injection with AG2 agents.
 The public API is exported from `dishka_ag2` and includes:
 
 - `AG2Scope`

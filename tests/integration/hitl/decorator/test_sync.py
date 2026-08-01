@@ -3,9 +3,9 @@
 from unittest.mock import Mock
 
 import pytest
-from autogen.beta import Agent
-from autogen.beta.events import HumanInputRequest, HumanMessage, ToolCallEvent
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.events import HumanInputRequest, HumanMessage, ToolCallEvent
+from ag2.testing import TestConfig
 
 from dishka_ag2 import FromDishka, inject
 from tests.integration.conftest import sync_env

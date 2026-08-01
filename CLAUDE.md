@@ -28,6 +28,19 @@ src/dishka_ag2/
 
 ## Architecture
 
+Requires `ag2 >= 1.0.1`. AG2 1.0 promoted the beta API to the top-level `ag2`
+package, so every import uses `ag2.*` (`ag2.events`, `ag2.middleware`,
+`ag2.annotations`, `ag2.tools`, `ag2.testing`); the old `autogen.beta` root is
+gone and unsupported.
+
+Two distinct symbols are both named `Context` — keep them apart:
+
+- `ag2.context.ConversationContext` — the runtime context object, used as the
+  Dishka context key (`from_context(ConversationContext, ...)`).
+- `ag2.annotations.Context` — `Annotated[ConversationContext, ContextField()]`,
+  the marker `fast_depends` recognises in user function signatures
+  (`_consts.CONTEXT_PARAM`).
+
 AG2 uses `fast_depends` for DI. The `inject()` decorator adds a hidden `___dishka_context` parameter (annotated with AG2's `Context`), which `fast_depends` auto-injects. The `container_getter` extracts the Dishka container from `context.dependencies`.
 
 ### Scope mapping
@@ -47,7 +60,7 @@ container, and restores on exit.
 ### AG2Provider context types
 
 - `BaseEvent` — available at SESSION scope (initial turn event)
-- `Context` — available at SESSION scope
+- `ConversationContext` — available at SESSION scope
 - `ToolCallEvent` — available at REQUEST scope
 
 ## Test structure

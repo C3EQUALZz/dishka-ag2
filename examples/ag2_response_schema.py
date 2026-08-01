@@ -6,9 +6,9 @@ Demonstrates PromptedSchema validators with injected REQUEST dependencies.
 import asyncio
 import logging
 
-from autogen.beta import Agent, PromptedSchema, response_schema
-from autogen.beta.middleware import Middleware
-from autogen.beta.testing import TestConfig
+from ag2 import Agent, PromptedSchema, response_schema
+from ag2.middleware import Middleware
+from ag2.testing import TestConfig
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (

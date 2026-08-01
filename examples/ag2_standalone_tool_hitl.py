@@ -14,12 +14,12 @@ from collections.abc import Iterable
 from typing import NewType
 from uuid import uuid4
 
-from autogen.beta import Agent
-from autogen.beta.annotations import Context
-from autogen.beta.events import HumanInputRequest, HumanMessage, ToolCallEvent
-from autogen.beta.middleware import Middleware
-from autogen.beta.testing import TestConfig
-from autogen.beta.tools import tool
+from ag2 import Agent
+from ag2.annotations import Context
+from ag2.events import HumanInputRequest, HumanMessage, ToolCallEvent
+from ag2.middleware import Middleware
+from ag2.testing import TestConfig
+from ag2.tools import tool
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (

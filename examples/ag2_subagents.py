@@ -14,11 +14,11 @@ from collections.abc import Iterable
 from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
-from autogen.beta import Agent
-from autogen.beta.annotations import Context
-from autogen.beta.events import ToolCallEvent
-from autogen.beta.middleware import Middleware
-from autogen.beta.testing import TestConfig
+from ag2 import Agent
+from ag2.annotations import Context
+from ag2.events import ToolCallEvent
+from ag2.middleware import Middleware
+from ag2.testing import TestConfig
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (

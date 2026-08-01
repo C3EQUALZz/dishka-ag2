@@ -1,6 +1,6 @@
 from typing import NewType
 
-from autogen.beta.annotations import Context
+from ag2.annotations import Context
 from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope

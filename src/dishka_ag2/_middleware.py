@@ -1,14 +1,15 @@
 from collections.abc import Sequence
 from typing import Final
 
-from autogen.beta.events import (
+from ag2.context import ConversationContext
+from ag2.events import (
     BaseEvent,
     HumanInputRequest,
     HumanMessage,
     ModelResponse,
     ToolCallEvent,
 )
-from autogen.beta.middleware import (
+from ag2.middleware import (
     AgentTurn,
     BaseMiddleware,
     HumanInputHook,
@@ -19,7 +20,6 @@ from autogen.beta.middleware import (
 from dishka import AsyncContainer, Container
 from typing_extensions import override
 
-from dishka_ag2._compat import Context
 from dishka_ag2._consts import CONTAINER_NAME
 from dishka_ag2._container_context import (
     async_session_scope,
@@ -32,7 +32,7 @@ class DishkaAsyncMiddleware(BaseMiddleware):
     def __init__(
         self,
         event: BaseEvent,
-        context: Context,
+        context: ConversationContext,
         *,
         container: AsyncContainer,
     ) -> None:
@@ -45,9 +45,9 @@ class DishkaAsyncMiddleware(BaseMiddleware):
         self,
         call_next: AgentTurn,
         event: BaseEvent,
-        context: Context,
+        context: ConversationContext,
     ) -> ModelResponse:
-        context_data = {BaseEvent: event, Context: context}
+        context_data = {BaseEvent: event, ConversationContext: context}
 
         async with async_session_scope(context, context_data):
             return await call_next(event, context)
@@ -57,9 +57,9 @@ class DishkaAsyncMiddleware(BaseMiddleware):
         self,
         call_next: ToolExecution,
         event: ToolCallEvent,
-        context: Context,
+        context: ConversationContext,
     ) -> ToolResultType:
-        context_data = {Context: context, ToolCallEvent: event}
+        context_data = {ConversationContext: context, ToolCallEvent: event}
 
         with stash_request_context(context, context_data):
             return await call_next(event, context)
@@ -69,9 +69,9 @@ class DishkaAsyncMiddleware(BaseMiddleware):
         self,
         call_next: LLMCall,
         events: Sequence[BaseEvent],
-        context: Context,
+        context: ConversationContext,
     ) -> ModelResponse:
-        context_data = {Context: context}
+        context_data = {ConversationContext: context}
 
         with stash_request_context(context, context_data):
             return await call_next(events, context)
@@ -81,9 +81,9 @@ class DishkaAsyncMiddleware(BaseMiddleware):
         self,
         call_next: HumanInputHook,
         event: HumanInputRequest,
-        context: Context,
+        context: ConversationContext,
     ) -> HumanMessage:
-        context_data = {Context: context, HumanInputRequest: event}
+        context_data = {ConversationContext: context, HumanInputRequest: event}
 
         with stash_request_context(context, context_data):
             return await call_next(event, context)
@@ -93,7 +93,7 @@ class DishkaSyncMiddleware(BaseMiddleware):
     def __init__(
         self,
         event: BaseEvent,
-        context: Context,
+        context: ConversationContext,
         *,
         container: Container,
     ) -> None:
@@ -106,9 +106,9 @@ class DishkaSyncMiddleware(BaseMiddleware):
         self,
         call_next: AgentTurn,
         event: BaseEvent,
-        context: Context,
+        context: ConversationContext,
     ) -> ModelResponse:
-        context_data = {BaseEvent: event, Context: context}
+        context_data = {BaseEvent: event, ConversationContext: context}
 
         with sync_session_scope(context, context_data):
             return await call_next(event, context)
@@ -118,9 +118,9 @@ class DishkaSyncMiddleware(BaseMiddleware):
         self,
         call_next: ToolExecution,
         event: ToolCallEvent,
-        context: Context,
+        context: ConversationContext,
     ) -> ToolResultType:
-        context_data = {Context: context, ToolCallEvent: event}
+        context_data = {ConversationContext: context, ToolCallEvent: event}
 
         with stash_request_context(context, context_data):
             return await call_next(event, context)
@@ -130,9 +130,9 @@ class DishkaSyncMiddleware(BaseMiddleware):
         self,
         call_next: LLMCall,
         events: Sequence[BaseEvent],
-        context: Context,
+        context: ConversationContext,
     ) -> ModelResponse:
-        context_data = {Context: context}
+        context_data = {ConversationContext: context}
 
         with stash_request_context(context, context_data):
             return await call_next(events, context)
@@ -142,9 +142,9 @@ class DishkaSyncMiddleware(BaseMiddleware):
         self,
         call_next: HumanInputHook,
         event: HumanInputRequest,
-        context: Context,
+        context: ConversationContext,
     ) -> HumanMessage:
-        context_data = {Context: context, HumanInputRequest: event}
+        context_data = {ConversationContext: context, HumanInputRequest: event}
 
         with stash_request_context(context, context_data):
             return await call_next(event, context)

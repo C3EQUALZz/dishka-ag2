@@ -2,9 +2,9 @@ from collections.abc import Iterable
 from typing import NewType
 from unittest.mock import Mock
 
-from autogen.beta.annotations import Context
-from autogen.beta.events import HumanInputRequest, ToolCallEvent
-from autogen.beta.tools import tool
+from ag2.annotations import Context
+from ag2.events import HumanInputRequest, ToolCallEvent
+from ag2.tools import tool
 from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope

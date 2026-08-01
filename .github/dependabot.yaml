@@ -31,7 +31,6 @@ updates:
         patterns:
           - "ag2"
           - "ag2-*"
-          - "autogen-*"
           - "dishka"
       pip:
         patterns:
@@ -39,5 +38,4 @@ updates:
         exclude-patterns:
           - "ag2"
           - "ag2-*"
-          - "autogen-*"
           - "dishka"

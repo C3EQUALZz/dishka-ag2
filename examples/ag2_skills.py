@@ -1,7 +1,6 @@
 """Example: AG2 agent skills with Dishka-injected tools.
 
-Agent skills (``autogen.beta.tools.skills``) were added in ag2 0.13.4. A skill
-is a directory holding a ``SKILL.md`` file; ``SkillsToolkit`` exposes the
+A skill is a directory holding a ``SKILL.md`` file; ``SkillsToolkit`` exposes the
 progressive-disclosure tools (``list_skills`` / ``load_skill`` /
 ``read_skill_resource`` / ``run_skill_script``) so the model can discover and
 load skills on demand.
@@ -19,13 +18,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from uuid import UUID, uuid4
 
-from autogen.beta import Agent
-from autogen.beta.events import ToolCallEvent, ToolResultEvent
-from autogen.beta.middleware import Middleware
-from autogen.beta.observers import observer
-from autogen.beta.testing import TestConfig
-from autogen.beta.tools import tool
-from autogen.beta.tools.skills import LocalRuntime, SkillsToolkit
+from ag2 import Agent
+from ag2.events import ToolCallEvent, ToolResultEvent
+from ag2.middleware import Middleware
+from ag2.observers import observer
+from ag2.testing import TestConfig
+from ag2.tools import tool
+from ag2.tools.skills import LocalRuntime, SkillsToolkit
 from dishka import Provider, make_async_container, provide
 
 from dishka_ag2 import (
@@ -140,11 +139,8 @@ async def main() -> None:
 
 
 def _result_text(event: ToolResultEvent) -> str:
-    result = event.result
-    if hasattr(result, "parts"):
-        part = result.parts[0]
-        return part.content if hasattr(part, "content") else str(part)
-    return result.content
+    part = event.result.parts[0]
+    return part.content if hasattr(part, "content") else str(part)
 
 
 if __name__ == "__main__":
