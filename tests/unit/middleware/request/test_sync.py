@@ -56,7 +56,7 @@ async def test_request_dependency(app_provider: AppProvider) -> None:
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(ctx),
+                result=await handle(ctx),
             )
 
         result = await instance.on_tool_execution(call_next, event, context)
@@ -94,7 +94,7 @@ async def test_injection_uses_positional_context(
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(ctx),
+                result=await handle(ctx),
             )
 
         result = await instance.on_tool_execution(call_next, event, context)
@@ -132,7 +132,7 @@ async def test_request_scope_per_tool_call(
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,
-                    result=handle(ctx),
+                    result=await handle(ctx),
                 )
 
             await instance.on_tool_execution(call_next, event, context)
@@ -179,7 +179,7 @@ async def test_missing_container_raises() -> None:
     context = make_context()
 
     with pytest.raises(DishkaError, match="Dishka container not found"):
-        handle(context)
+        await handle(context)
 
 
 @pytest.mark.asyncio()
@@ -203,7 +203,7 @@ async def test_inject_request_cleanup_on_exception(
             raise RuntimeError("boom")
 
         with pytest.raises(RuntimeError, match="boom"):
-            handle(context)
+            await handle(context)
 
         assert context.dependencies[CONTAINER_NAME] is root
         app_provider.request_released.assert_called_once()
@@ -236,7 +236,7 @@ async def test_llm_call_request_dependency(
             evs: Sequence[BaseEvent],
             ctx: ConversationContext,
         ) -> ModelResponse:
-            result = handle(ctx)
+            result = await handle(ctx)
             return make_model_response(result)
 
         result = await instance.on_llm_call(call_next, events, context)
@@ -271,7 +271,7 @@ async def test_human_input_request_dependency(
             ev: HumanInputRequest,
             ctx: ConversationContext,
         ) -> HumanMessage:
-            handle(ctx)
+            await handle(ctx)
             return HumanMessage(content="yes")
 
         result = await instance.on_human_input(
@@ -309,7 +309,7 @@ async def test_human_input_provides_event(
             ev: HumanInputRequest,
             ctx: ConversationContext,
         ) -> HumanMessage:
-            content: str = handle(ctx)
+            content: str = await handle(ctx)
             return HumanMessage(content=content)
 
         result = await instance.on_human_input(

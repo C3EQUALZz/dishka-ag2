@@ -174,6 +174,31 @@ async def main() -> None:
         await container.close()
 ```
 
+## Sync and async tools
+
+An agent using `DishkaAsyncMiddleware` can mix `def` and `async def` tools
+with the same `@inject` decorator. For example, alongside `greet_user` above:
+
+```python
+@agent.tool
+@inject
+def next_count(counter: FromDishka[AppCounter]) -> int:
+    return counter.increment()
+```
+
+See `examples/ag2_agent_tool.py` for the complete example.
+
+For a synchronous tool with an `AsyncContainer`, dependencies are resolved
+and the `REQUEST` scope is closed asynchronously on the event loop. The
+tool body runs in a worker thread. Concurrent calls share the turn's
+`SESSION` and receive separate `REQUEST` scopes.
+
+`@inject` returns an async callable for synchronous functions too, so direct
+calls to a decorated function require `await`, including with a sync container.
+The integration uses AG2's async conversion with its default thread policy;
+`sync_to_thread=False` on tool registration does not disable the worker thread
+for injected sync functions. Async tools continue to require an `AsyncContainer`.
+
 ## Dynamic prompts
 
 AG2 evaluates dynamic prompts before the middleware starts the turn. If the
