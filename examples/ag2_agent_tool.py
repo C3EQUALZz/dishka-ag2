@@ -93,6 +93,7 @@ agent = Agent(
     prompt="Use tools to greet users.",
     config=TestConfig(
         ToolCallEvent(name="greet_user", arguments='{"name": "Connor"}'),
+        ToolCallEvent(name="next_count", arguments="{}"),
         ToolCallEvent(name="greet_user", arguments='{"name": "Sara"}'),
         "All greetings are done.",
     ),
@@ -113,6 +114,12 @@ async def greet_user(
     result = await greeting.greet(name)
     logger.info("[tool] count=%s %s", count, result)
     return result
+
+
+@agent.tool
+@inject
+def next_count(counter: FromDishka[AppCounter]) -> int:
+    return counter.increment()
 
 
 async def main() -> None:

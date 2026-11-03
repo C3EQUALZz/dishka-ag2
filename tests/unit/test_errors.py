@@ -9,7 +9,7 @@ from dishka.exception_base import DishkaError
 
 from dishka_ag2 import FromDishka, inject
 from tests.common import AppDep, AppProvider
-from tests.conftest import make_context, make_tool_call
+from tests.conftest import make_context, make_tool_call, tool_result_content
 from tests.unit.conftest import create_ag2_env
 
 if TYPE_CHECKING:
@@ -61,7 +61,7 @@ async def test_async_tool_with_sync_container_raises(
 
 
 @pytest.mark.asyncio()
-async def test_sync_tool_with_async_container_raises(
+async def test_sync_tool_with_async_container(
     app_provider: AppProvider,
 ) -> None:
     async with create_ag2_env(
@@ -87,18 +87,12 @@ async def test_sync_tool_with_async_container_raises(
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(ctx),
+                result=await handle(ctx),
             )
 
-        with pytest.raises(
-            DishkaError,
-            match="Expected Container",
-        ):
-            await instance.on_tool_execution(
-                call_next,
-                event,
-                context,
-            )
+        result = await instance.on_tool_execution(call_next, event, context)
+        assert isinstance(result, ToolResultEvent)
+        assert tool_result_content(result) == "APP"
 
 
 @pytest.mark.asyncio()

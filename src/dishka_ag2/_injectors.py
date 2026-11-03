@@ -1,12 +1,16 @@
 import inspect
-from collections.abc import Awaitable, Callable
+from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
 from typing import Any, overload
 
 from ag2.context import ConversationContext
+from ag2.utils import (
+    _to_async as to_async,  # ruff: ignore[import-private-name] - No public API yet.
+)
+from dishka import AsyncContainer
 from dishka.integrations.base import wrap_injection
 
-from dishka_ag2._consts import PENDING_REQUEST_CONTEXT
+from dishka_ag2._consts import CONTAINER_NAME, PENDING_REQUEST_CONTEXT
 from dishka_ag2._container import (
     get_async_container_from_context,
     get_sync_container_from_context,
@@ -26,7 +30,7 @@ def _request_context_data(context: ConversationContext) -> dict[Any, Any]:
 
 def inject_async(
     func: Callable[ParamsP, Awaitable[ReturnT]],
-) -> Callable[..., Awaitable[ReturnT]]:
+) -> Callable[..., Coroutine[Any, Any, ReturnT]]:
     get_context, additional_params = build_context_getter(func)
 
     inner: Callable[..., Awaitable[ReturnT]] = wrap_injection(
@@ -56,7 +60,7 @@ def inject_async(
 
 def inject_sync(
     func: Callable[ParamsP, ReturnT],
-) -> Callable[..., ReturnT]:
+) -> Callable[..., Coroutine[Any, Any, ReturnT]]:
     get_context, additional_params = build_context_getter(func)
 
     inner: Callable[..., ReturnT] = wrap_injection(
@@ -71,7 +75,7 @@ def inject_sync(
     )
 
     @wraps(inner)
-    def wrapper(*args: ParamsP.args, **kwargs: ParamsP.kwargs) -> ReturnT:
+    def sync_wrapper(*args: ParamsP.args, **kwargs: ParamsP.kwargs) -> ReturnT:
         context = get_context(args, kwargs)
         root = walk_to_root(get_sync_container_from_context(context))
         with sync_request_scope(
@@ -81,24 +85,33 @@ def inject_sync(
         ):
             return inner(*args, **kwargs)
 
+    async_inner: Callable[..., Awaitable[ReturnT]] = inject_async(to_async(func))
+
+    @wraps(inner)
+    async def wrapper(*args: ParamsP.args, **kwargs: ParamsP.kwargs) -> ReturnT:
+        context = get_context(args, kwargs)
+        if isinstance(context.dependencies.get(CONTAINER_NAME), AsyncContainer):
+            return await async_inner(*args, **kwargs)
+        return sync_wrapper(*args, **kwargs)
+
     return wrapper
 
 
 @overload
 def inject(
     func: Callable[..., Awaitable[ReturnT]],
-) -> Callable[..., Awaitable[ReturnT]]: ...
+) -> Callable[..., Coroutine[Any, Any, ReturnT]]: ...
 
 
 @overload
 def inject(
     func: Callable[..., ReturnT],
-) -> Callable[..., ReturnT]: ...
+) -> Callable[..., Coroutine[Any, Any, ReturnT]]: ...
 
 
 def inject(
     func: Callable[ParamsP, Any],
-) -> Callable[..., Any]:
+) -> Callable[..., Coroutine[Any, Any, Any]]:
     if inspect.iscoroutinefunction(func):
         return inject_async(func)
     return inject_sync(func)
