@@ -1,5 +1,5 @@
 import inspect
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
 from ag2.middleware import Middleware
@@ -27,11 +27,12 @@ async def create_ag2_env(
     provider: AppProvider,
     *,
     use_async_container: bool,
-) -> AsyncIterator[
+) -> AsyncGenerator[
     tuple[
         AsyncContainer | Container,
         Middleware,
-    ]
+    ],
+    None,
 ]:
     container: AsyncContainer | Container
 
