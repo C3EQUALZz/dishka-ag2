@@ -20,6 +20,7 @@ from tests.integration.dynamic_prompt.common import (
 @pytest.mark.asyncio()
 async def test_prompt_decorators_with_mixed_functions(app_provider: AppProvider) -> None:
     calls: list[tuple[str, str, AsyncContainer]] = []
+    contexts: list[Context] = []
 
     async with async_env(app_provider, PromptProvider()) as (root, middleware):
         agent = Agent(
@@ -41,6 +42,7 @@ async def test_prompt_decorators_with_mixed_functions(app_provider: AppProvider)
             assert request == REQUEST_DEP_VALUE
             prompt = f"sync tenant={tenant} {service.build(ctx)}"
             calls.append(("sync", prompt, container))
+            contexts.append(ctx)
             return prompt
 
         @agent.prompt
@@ -55,10 +57,11 @@ async def test_prompt_decorators_with_mixed_functions(app_provider: AppProvider)
             assert request == REQUEST_DEP_VALUE
             prompt = f"async tenant={tenant} {service.build(ctx)}"
             calls.append(("async", prompt, container))
+            contexts.append(ctx)
             return prompt
 
         await agent.ask("Build both prompts.", variables={"tenant": "demo"})
-        assert agent.dependencies[CONTAINER_NAME] is root
+        assert all(ctx.dependencies[CONTAINER_NAME] is root for ctx in contexts)
 
     assert [name for name, _, _ in calls] == ["sync", "async"]
     assert all("tenant=acme" in prompt and "demo" in prompt for _, prompt, _ in calls)

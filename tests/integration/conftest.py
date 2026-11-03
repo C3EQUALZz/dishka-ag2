@@ -1,4 +1,4 @@
-from collections.abc import AsyncIterator
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -16,7 +16,7 @@ from dishka_ag2 import (
 @asynccontextmanager
 async def async_env(
     *providers: Provider,
-) -> AsyncIterator[tuple[Any, Middleware]]:
+) -> AsyncGenerator[tuple[Any, Middleware], None]:
     container = make_async_container(*providers, AG2Provider(), scopes=AG2Scope)
     middleware = Middleware(DishkaAsyncMiddleware, container=container)
     try:
@@ -28,7 +28,7 @@ async def async_env(
 @asynccontextmanager
 async def sync_env(
     *providers: Provider,
-) -> AsyncIterator[tuple[Any, Middleware]]:
+) -> AsyncGenerator[tuple[Any, Middleware], None]:
     container = make_container(*providers, AG2Provider(), scopes=AG2Scope)
     middleware = Middleware(DishkaSyncMiddleware, container=container)
     try:
