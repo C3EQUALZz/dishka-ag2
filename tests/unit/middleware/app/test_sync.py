@@ -38,7 +38,7 @@ async def test_app_dependency(app_provider: AppProvider) -> None:
         ) -> ToolResultEvent:
             return ToolResultEvent.from_call(
                 ev,
-                result=handle(ctx),
+                result=await handle(ctx),
             )
 
         await instance.on_tool_execution(call_next, event, context)
@@ -78,7 +78,7 @@ async def test_app_scope_reuse(app_provider: AppProvider) -> None:
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     ev,
-                    result=handle(ctx),
+                    result=await handle(ctx),
                 )
 
             await instance.on_tool_execution(call_next, event, context)

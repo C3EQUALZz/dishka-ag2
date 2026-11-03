@@ -1,7 +1,7 @@
 import asyncio
 from collections.abc import AsyncIterator, Callable, Coroutine, Iterable
 from contextlib import AbstractAsyncContextManager, AbstractContextManager
-from typing import Any, NewType
+from typing import TYPE_CHECKING, Any, NewType
 from unittest.mock import Mock
 from uuid import UUID, uuid4
 
@@ -12,6 +12,9 @@ from ag2.types import ClassInfo, SendableMessage
 from dishka import Provider, provide
 
 from dishka_ag2 import AG2Scope
+
+if TYPE_CHECKING:
+    from ag2.history import History
 
 AppDep = NewType("AppDep", str)
 APP_DEP_VALUE = AppDep("APP")
@@ -62,6 +65,10 @@ class DummyStream(Stream):
     id: UUID = uuid4()
     pending_messages: "list[ModelRequest]" = []  # ruff: ignore[mutable-class-default]
 
+    @property
+    def history(self) -> "History":
+        raise NotImplementedError
+
     def enqueue(
         self,
         *content: "SendableMessage | Input",
@@ -100,6 +107,7 @@ class DummyStream(Stream):
         *,
         interrupt: bool = False,
         sync_to_thread: bool = True,
+        timeout: float | None = None,
         condition: Condition | None = None,
     ) -> Callable[[Callable[..., Any]], SubId] | SubId:
         raise NotImplementedError
@@ -113,6 +121,7 @@ class DummyStream(Stream):
         *,
         interrupt: bool = False,
         sync_to_thread: bool = True,
+        timeout: float | None = None,
         condition: Condition | None = None,
     ) -> AbstractContextManager[None]:
         raise NotImplementedError
