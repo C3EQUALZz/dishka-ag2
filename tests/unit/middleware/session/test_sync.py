@@ -56,7 +56,7 @@ async def test_session_scope_via_on_turn(
             ev: BaseEvent,
             ctx: ConversationContext,
         ) -> ModelResponse:
-            result = handle(ctx)
+            result = await handle(ctx)
             assert result == str(SESSION_DEP_VALUE)
             return make_model_response(result)
 
@@ -102,7 +102,7 @@ async def test_session_shared_across_tool_calls(
                 ) -> ToolResultEvent:
                     return ToolResultEvent.from_call(
                         tool_ev,
-                        result=handle(tool_ctx),
+                        result=await handle(tool_ctx),
                     )
 
                 await instance.on_tool_execution(
@@ -197,7 +197,7 @@ async def test_base_event_injected_at_session(
             ev: BaseEvent,
             ctx: ConversationContext,
         ) -> ModelResponse:
-            result = handle(ctx)
+            result = await handle(ctx)
             return make_model_response(result)
 
         await instance.on_turn(turn_body, event, context)
@@ -241,7 +241,7 @@ async def test_llm_call_uses_session_container(
                 evs: Sequence[BaseEvent],
                 llm_ctx: ConversationContext,
             ) -> ModelResponse:
-                handle(llm_ctx)
+                await handle(llm_ctx)
                 return make_model_response("ok")
 
             await instance.on_llm_call(llm_call_next, events, ctx)
@@ -254,7 +254,7 @@ async def test_llm_call_uses_session_container(
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     tool_ev,
-                    result=handle(tool_ctx),
+                    result=await handle(tool_ctx),
                 )
 
             await instance.on_tool_execution(
@@ -307,7 +307,7 @@ async def test_human_input_uses_session_container(
                 hi_ev: HumanInputRequest,
                 hi_ctx: ConversationContext,
             ) -> HumanMessage:
-                handle(hi_ctx)
+                await handle(hi_ctx)
                 return HumanMessage(content="ok")
 
             await instance.on_human_input(
@@ -324,7 +324,7 @@ async def test_human_input_uses_session_container(
             ) -> ToolResultEvent:
                 return ToolResultEvent.from_call(
                     tool_ev,
-                    result=handle(tool_ctx),
+                    result=await handle(tool_ctx),
                 )
 
             await instance.on_tool_execution(

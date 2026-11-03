@@ -48,7 +48,7 @@ async def test_response_schema_injected_app_scope() -> None:
 
         reply = await agent.ask("Return 43.")
         content = await reply.content()
-        assert content == 43  # type: ignore[comparison-overlap]
+        assert content == 43
 
 
 @pytest.mark.asyncio()
@@ -74,5 +74,5 @@ async def test_response_schema_injected_request_scope(
 
         reply = await agent.ask("Return 77.")
         content = await reply.content()
-        assert content == 77  # type: ignore[comparison-overlap]
+        assert content == 77
         assert app_provider.request_released.call_count >= 1
