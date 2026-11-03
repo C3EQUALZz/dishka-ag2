@@ -73,6 +73,7 @@ test = [
 skips = ["B101"]
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
     "ignore::DeprecationWarning:ag2\\..*",
 ]
