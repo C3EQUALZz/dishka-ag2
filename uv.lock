@@ -12,7 +12,7 @@ resolution-markers = [
 
 [[package]]
 name = "ag2"
-version = "1.2.1"
+version = "1.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "anyio" },
@@ -21,9 +21,9 @@ dependencies = [
     { name = "pydantic" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/81/8a/c31b94a43d5742c00d30692151cf416dbb4f47553f86ad50fd90e4ed1229/ag2-1.2.1.tar.gz", hash = "sha256:bae4947a00f6676c3108bfa4e81d6a0afbaf7354acdc7e1bad7c67e1163c8f08", size = 971517, upload-time = "2026-10-21T20:21:19.271Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f9/9c/53979898c15d7c1835a002e66f61ca6b81396fa0acb0c65461fa586a1cc5/ag2-1.2.2.tar.gz", hash = "sha256:46f6852e764199faf978f6bad071313318ba4d9bcc5d5a63d6c7448b5351dd98", size = 991126, upload-time = "2026-10-27T20:54:59.257Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4b/ea/8d0323ee789a2809ee507ecf5ffab0f6c3a1d0f4bfa003ca816d3a3cbccd/ag2-1.2.1-py3-none-any.whl", hash = "sha256:65224a6b1b55f0f26a07d1eebe10f8cb3565741db26e35fb7d880fca63c915d5", size = 1239631, upload-time = "2026-10-21T20:21:17.74Z" },
+    { url = "https://files.pythonhosted.org/packages/1f/d7/d213e008e15fc874138925e416732cabee561ba1aaf5e51a21cbd17d6c69/ag2-1.2.2-py3-none-any.whl", hash = "sha256:a85d6993cac941e8ebcaaf9d73e91600238333501082f7a54d1a565ef8e8ad0f", size = 1263522, upload-time = "2026-10-27T20:54:57.789Z" },
 ]
 
 [[package]]
